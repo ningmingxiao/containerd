@@ -471,7 +471,7 @@ func LoadPlugins(ctx context.Context, config *srvconfig.Config) ([]*plugin.Regis
 					return
 				}
 			}()
-			db, err := bolt.Open(path, 0644, &options)
+			db, err := bolt.Open(path, 0600, &options)
 			close(doneCh)
 			if err != nil {
 				return nil, err
