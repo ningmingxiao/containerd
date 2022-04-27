@@ -159,6 +159,10 @@ func (c *criService) StartContainer(ctx context.Context, r *runtime.StartContain
 
 	var task containerd.Task
 	if exitedContainer {
+		if cntr.IsStopSignaledWithTimeout != nil && *cntr.IsStopSignaledWithTimeout == 1 {
+			atomic.CompareAndSwapUint32(cntr.IsStopSignaledWithTimeout, 1, 0)
+			log.G(ctx).Info("IsStopSignaledWithTimeout is change from 1 to 0")
+		}
 		task, err = container.NewTask(ctx, exitedIOCreation, taskOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create containerd task: %w", err)
