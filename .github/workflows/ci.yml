@@ -50,7 +50,6 @@ jobs:
   #
   project:
     name: Project Checks
-    if: github.repository == 'containerd/containerd'
     runs-on: ubuntu-20.04
     timeout-minutes: 5
 
@@ -69,11 +68,11 @@ jobs:
           working-directory: src/github.com/containerd/containerd
           repo-access-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: verify go modules and vendor directory
-        run: |
-          sudo apt-get install -y jq
-          make verify-vendor
-        working-directory: src/github.com/containerd/containerd
+#      - name: verify go modules and vendor directory
+#        run: |
+#          sudo apt-get install -y jq
+#          make verify-vendor
+#        working-directory: src/github.com/containerd/containerd
 
   #
   # Protobuf checks

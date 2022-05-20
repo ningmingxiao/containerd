@@ -35,6 +35,8 @@ import (
 	"github.com/containerd/containerd/oci"
 	"github.com/containerd/containerd/pkg/testutil"
 	"github.com/containerd/containerd/runtime/restart"
+	"github.com/containerd/containerd/runtime/restart/monitor"
+	"github.com/containerd/containerd/integration"
 	srvconfig "github.com/containerd/containerd/services/server/config"
 	"github.com/containerd/typeurl/v2"
 	exec "golang.org/x/sys/execabs"
@@ -167,6 +169,7 @@ func testRestartMonitorAlways(t *testing.T, client *Client, interval time.Durati
 		t.Fatal(err)
 	}
 
+	policy, _ := restart.NewPolicy("always")
 	container, err := client.NewContainer(ctx, id,
 		WithNewSnapshot(id, image),
 		WithNewSpec(
@@ -174,6 +177,7 @@ func testRestartMonitorAlways(t *testing.T, client *Client, interval time.Durati
 			longCommand,
 		),
 		restart.WithStatus(Running),
+		restart.WithPolicy(policy),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -251,7 +255,23 @@ func testRestartMonitorAlways(t *testing.T, client *Client, interval time.Durati
 	if lastCheck.After(expected) {
 		t.Fatalf("%v: the task was restarted, but it must be before %v", lastCheck, expected)
 	}
+
 	t.Logf("%v: the task was restarted since %v", time.Now(), lastCheck)
+
+	if err := task.Kill(ctx, syscall.SIGKILL); err != nil {
+		t.Fatal(err)
+	}
+	monitor.UpdateContainerStoppedLabel(context.Background(), container, true)
+	integration.RestartContainerd(t, syscall.SIGTERM)
+	time.Sleep(time.Second * 20)
+	labels, err := container.Labels(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stoppedLabel, _ := labels[restart.ExplicitlyStoppedLabel]
+	if stoppedLabel != strconv.FormatBool(false) {
+		t.Fatalf("the restart.ExplicitlyStoppedLabel should be false")
+	}
 }
 
 // testRestartMonitorWithOnFailurePolicy restarts its container with `on-failure:1`
