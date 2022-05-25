@@ -248,6 +248,11 @@ can be used and modified as necessary as a custom configuration.`
 				return fmt.Errorf("failed to get listener for metrics endpoint: %w", err)
 			}
 			serve(ctx, l, server.ServeMetrics)
+		} else {
+			log.G(ctx).Infof("prometheus metrics is disabled,you can set an address in metrics from config.toml to enable it")
+		}
+		if !config.Metrics.GRPCHistogram {
+			log.G(ctx).Infof("prometheus histogram metrics is disabled,you can set grpc_histogram=true in metrics from config.toml to enable it")
 		}
 		// setup the ttrpc endpoint
 		tl, err := sys.GetLocalListener(config.TTRPC.Address, config.TTRPC.UID, config.TTRPC.GID)
