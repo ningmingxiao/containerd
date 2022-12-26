@@ -35,7 +35,6 @@ import (
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/oci"
 	criconfig "github.com/containerd/containerd/pkg/cri/config"
-	cio "github.com/containerd/containerd/pkg/cri/io"
 	customopts "github.com/containerd/containerd/pkg/cri/opts"
 	containerstore "github.com/containerd/containerd/pkg/cri/store/container"
 	"github.com/containerd/containerd/pkg/cri/util"
@@ -219,20 +218,6 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 		log.G(ctx).Infof("Logging will be disabled due to empty log paths for sandbox (%q) or container (%q)",
 			sandboxConfig.GetLogDirectory(), config.GetLogPath())
 	}
-
-	containerIO, err := cio.NewContainerIO(id,
-		cio.WithNewFIFOs(volatileContainerRootDir, config.GetTty(), config.GetStdin()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create container io: %w", err)
-	}
-	defer func() {
-		if retErr != nil {
-			if err := containerIO.Close(); err != nil {
-				log.G(ctx).WithError(err).Errorf("Failed to close container io %q", id)
-			}
-		}
-	}()
-
 	specOpts, err := c.containerSpecOpts(config, &image.ImageSpec.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container spec opts: %w", err)
@@ -276,7 +261,6 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 	container, err := containerstore.NewContainer(meta,
 		containerstore.WithStatus(status, containerRootDir),
 		containerstore.WithContainer(cntr),
-		containerstore.WithContainerIO(containerIO),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create internal container object for %q: %w", id, err)

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"time"
 
 	"github.com/containerd/containerd"
@@ -99,15 +100,13 @@ func (c *criService) StartContainer(ctx context.Context, r *runtime.StartContain
 			}
 		}
 	}
-
-	ioCreation := func(id string) (_ containerdio.IO, err error) {
-		stdoutWC, stderrWC, err := c.createContainerLoggers(meta.LogPath, config.GetTty())
+	ioCreation := containerdio.NullIO
+	if meta.LogPath != "" {
+		u, err := url.Parse(fmt.Sprintf("file:///%s", meta.LogPath))
 		if err != nil {
-			return nil, fmt.Errorf("failed to create container loggers: %w", err)
+			return nil, err
 		}
-		cntr.IO.AddOutput("log", stdoutWC, stderrWC)
-		cntr.IO.Pipe()
-		return cntr.IO, nil
+		ioCreation = containerdio.LogURI(u)
 	}
 
 	ctrInfo, err := container.Info(ctx)
