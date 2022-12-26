@@ -78,7 +78,6 @@ func DefaultConfig() PluginConfig {
 		SandboxImage:              "registry.k8s.io/pause:3.8",
 		StatsCollectPeriod:        10,
 		MaxContainerLogLineSize:   16 * 1024,
-		ContainerLogScheme:        "fifo",
 		MaxConcurrentDownloads:    3,
 		IgnoreImageDefinedVolumes: false,
 		// TODO(windows): Add platform specific config, so that most common defaults can be shared.
