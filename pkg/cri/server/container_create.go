@@ -219,6 +219,7 @@ func (c *criService) CreateContainer(ctx context.Context, r *runtime.CreateConta
 	}
 
 	var containerIO *cio.ContainerIO
+	c.config.ContainerLogTheme = "file"
 	meta.LogTheme = c.config.ContainerLogTheme
 	if c.config.ContainerLogTheme == "" || c.config.ContainerLogTheme == "fifo" {
 		containerIO, err = cio.NewContainerIO(id,
