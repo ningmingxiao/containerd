@@ -11,7 +11,7 @@ func CoverMode() string {
 	panic(unsupportedApi("testing.CoverMode"))
 }
 func Coverage() float64 {
-	panic(unsupportedApi("testing.Coverage"))	
+	panic(unsupportedApi("testing.Coverage"))
 }
 func Init() {
 	panic(unsupportedApi("testing.Init"))
@@ -36,7 +36,8 @@ func Verbose() bool {
 	panic(unsupportedApi("testing.Verbose"))
 }
 
-type M struct {}
+type M struct{}
+
 func (m *M) Run() (code int) {
 	panic("testing.M is not support in libFuzzer Mode")
 }

@@ -23,13 +23,20 @@ import (
 
 // QualifiedName returns the qualified name for a device.
 // The syntax for a qualified device names is
-//   "<vendor>/<class>=<name>".
+//
+//	"<vendor>/<class>=<name>".
+//
 // A valid vendor name may contain the following runes:
-//   'A'-'Z', 'a'-'z', '0'-'9', '.', '-', '_'.
+//
+//	'A'-'Z', 'a'-'z', '0'-'9', '.', '-', '_'.
+//
 // A valid class name may contain the following runes:
-//   'A'-'Z', 'a'-'z', '0'-'9', '-', '_'.
+//
+//	'A'-'Z', 'a'-'z', '0'-'9', '-', '_'.
+//
 // A valid device name may containe the following runes:
-//   'A'-'Z', 'a'-'z', '0'-'9', '-', '_', '.', ':'
+//
+//	'A'-'Z', 'a'-'z', '0'-'9', '-', '_', '.', ':'
 func QualifiedName(vendor, class, name string) string {
 	return vendor + "/" + class + "=" + name
 }
@@ -96,7 +103,9 @@ func ParseDevice(device string) (string, string, string) {
 
 // ParseQualifier splits a device qualifier into vendor and class.
 // The syntax for a device qualifier is
-//     "<vendor>/<class>"
+//
+//	"<vendor>/<class>"
+//
 // If parsing fails, an empty vendor and the class set to the
 // verbatim input is returned.
 func ParseQualifier(kind string) (string, string) {

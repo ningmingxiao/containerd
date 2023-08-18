@@ -1,0 +1,27 @@
+[package]
+name = "rust-runc"
+version = "0.1.0"
+authors = ["Chen Bin <chen.bin11@zte.com.cn>"]
+edition = "2018"
+exclude = ["test_fixture"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+snafu = "0.6.8"
+tokio = { version = "0.2.22", features = ["full"] }
+futures = "0.3.5"
+libc = "0.2.73"
+log = "0.4"
+mio = "0.6.20"
+mio-uds = "0.6.8"
+serde = "1.0.114"
+serde_json = "1.0.57"
+uuid = { version = "0.8.1", features = ["serde", "v4"] }
+chrono = { version = "0.4.13", features = ["serde"] }
+nix = "0.18.0"
+prctl = "1.0.0"
+
+[dev-dependencies]
+flate2 = "1.0.13"
+tar = "0.4.26"

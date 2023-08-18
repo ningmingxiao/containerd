@@ -8,3 +8,8 @@ releases/*.tar.gz
 releases/*.tar.gz.sha256sum
 _output/
 .vagrant/
+**/.idea/
+.vscode/
+
+build/RPMS/
+build/SRPMS/

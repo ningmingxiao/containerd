@@ -1,0 +1,17 @@
+[package]
+name = "protocols"
+version = "0.1.0"
+authors = ["Chen Bin <chen.bin11@zte.com.cn>"]
+edition = "2018"
+build = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ttrpc = { version = "0.4.6", features = ["async", "sync"] }
+protobuf = "2.17.0"
+
+
+[build-dependencies]
+ttrpc-codegen = "0.1.2"
+

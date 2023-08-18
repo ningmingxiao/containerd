@@ -1,3 +1,4 @@
+//go:build cgo
 // +build cgo
 
 /*
@@ -372,21 +373,22 @@ type Pkcs11Recipient struct {
 // EncryptMultiple encrypts for one or multiple pkcs11 devices; the public keys passed to this function
 // may either be *rsa.PublicKey or *pkcs11uri.Pkcs11URI; the returned byte array is a JSON string of the
 // following format:
-// {
-//   recipients: [  // recipient list
-//     {
-//        "version": 0,
-//        "blob": <base64 encoded RSA OAEP encrypted blob>,
-//        "hash": <hash used for OAEP other than 'sha256'>
-//     } ,
-//     {
-//        "version": 0,
-//        "blob": <base64 encoded RSA OAEP encrypted blob>,
-//        "hash": <hash used for OAEP other than 'sha256'>
-//     } ,
-//     [...]
-//   ]
-// }
+//
+//	{
+//	  recipients: [  // recipient list
+//	    {
+//	       "version": 0,
+//	       "blob": <base64 encoded RSA OAEP encrypted blob>,
+//	       "hash": <hash used for OAEP other than 'sha256'>
+//	    } ,
+//	    {
+//	       "version": 0,
+//	       "blob": <base64 encoded RSA OAEP encrypted blob>,
+//	       "hash": <hash used for OAEP other than 'sha256'>
+//	    } ,
+//	    [...]
+//	  ]
+//	}
 func EncryptMultiple(pubKeys []interface{}, data []byte) ([]byte, error) {
 	var (
 		ciphertext []byte
@@ -421,23 +423,25 @@ func EncryptMultiple(pubKeys []interface{}, data []byte) ([]byte, error) {
 
 // Decrypt tries to decrypt one of the recipients' blobs using a pkcs11 private key.
 // The input pkcs11blobstr is a string with the following format:
-// {
-//   recipients: [  // recipient list
-//     {
-//        "version": 0,
-//        "blob": <base64 encoded RSA OAEP encrypted blob>,
-//        "hash": <hash used for OAEP other than 'sha1'>
-//     } ,
-//     {
-//        "version": 0,
-//        "blob": <base64 encoded RSA OAEP encrypted blob>,
-//        "hash": <hash used for OAEP other than 'sha1'>
-//     } ,
-//     [...]
-// }
-// Note: More recent versions of this code explicitly write 'sha1'
-//       while older versions left it empty in case of 'sha1'.
 //
+//	{
+//	  recipients: [  // recipient list
+//	    {
+//	       "version": 0,
+//	       "blob": <base64 encoded RSA OAEP encrypted blob>,
+//	       "hash": <hash used for OAEP other than 'sha1'>
+//	    } ,
+//	    {
+//	       "version": 0,
+//	       "blob": <base64 encoded RSA OAEP encrypted blob>,
+//	       "hash": <hash used for OAEP other than 'sha1'>
+//	    } ,
+//	    [...]
+//	}
+//
+// Note: More recent versions of this code explicitly write 'sha1'
+//
+//	while older versions left it empty in case of 'sha1'.
 func Decrypt(privKeyObjs []*Pkcs11KeyFileObject, pkcs11blobstr []byte) ([]byte, error) {
 	pkcs11blob := Pkcs11Blob{}
 	err := json.Unmarshal(pkcs11blobstr, &pkcs11blob)

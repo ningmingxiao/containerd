@@ -1,0 +1,30 @@
+[package]
+name = "containerd-client"
+version = "0.2.0"
+authors = ["Maksym Pavlenko <pavlenko.maksym@gmail.com>", "The containerd Authors"]
+edition = "2018"
+license = "Apache-2.0"
+repository = "https://github.com/containerd/rust-extensions"
+description = "GRPC bindings to containerd APIs"
+keywords = ["containerd", "client", "grpc", "containers"]
+categories = ["api-bindings", "asynchronous"]
+homepage = "https://containerd.io"
+
+[dependencies]
+tonic = "0.7"
+prost = "0.10"
+prost-types = "0.10"
+tokio = { version = "1.17", optional = true }
+tower = { version = "0.4", optional = true }
+
+[build-dependencies]
+tonic-build = "0.7"
+
+[features]
+connect = ["tokio", "tower"]
+
+# Technically Tonic doesn't require Tokio and Tower dependencies here.
+# However we need them to implement `connect` helper and it's highly unlikely
+# that Tonic will be used with any other async runtime (see https://github.com/hyperium/tonic/issues/152)
+# So we enable `connect` feature by default (use `--no-default-features` otherwise).
+default = ["connect"]

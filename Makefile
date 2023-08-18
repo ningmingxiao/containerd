@@ -71,6 +71,17 @@ else
 	DEBUG_TAGS := static_build
 endif
 
+RSHIM_V2_ROOT = ./cmd/rust-extensions/crates/runc-shim
+ifeq ($(GOARCH),arm64)
+       RSHIM_V2_TARGET = aarch64-unknown-linux-musl
+       RSHIM_V2_RUST_MUSL = /usr/local/rust/rust-1.57.0-aarch64-unknown-linux-gnu
+       RSHIM_V2_BIN = ./cmd/rust-extensions/target/aarch64-unknown-linux-musl/release
+else
+       RSHIM_V2_TARGET = x86_64-unknown-linux-musl
+       RSHIM_V2_RUST_MUSL = /usr/local/rust/rust-1.57.0-x86_64-unknown-linux-musl
+       RSHIM_V2_BIN = ./cmd/rust-extensions/target/x86_64-unknown-linux-musl/release
+endif
+
 WHALE = "🇩"
 ONI = "👹"
 
@@ -83,6 +94,7 @@ PKG=github.com/containerd/containerd
 
 # Project binaries.
 COMMANDS=ctr containerd containerd-stress
+COMMANDSCOVERITY=ctr containerd containerd-stress containerd-shim containerd-shim-runc-v1 containerd-shim-runc-v2
 MANPAGES=ctr.8 containerd.8 containerd-config.8 containerd-config.toml.5
 
 ifdef BUILDTAGS
@@ -135,6 +147,7 @@ GO_GCFLAGS=$(shell				\
 	)
 
 BINARIES=$(addprefix bin/,$(COMMANDS))
+BINARIESCOVERITY = $(addprefix bin/,$(COMMANDSCOVERITY))
 
 #include platform specific makefile
 -include Makefile.$(GOOS)
@@ -142,6 +155,28 @@ BINARIES=$(addprefix bin/,$(COMMANDS))
 # Flags passed to `go test`
 TESTFLAGS ?= $(TESTFLAGS_RACE) $(EXTRA_TESTFLAGS)
 TESTFLAGS_PARALLEL ?= 8
+
+RSHIM_ROOT = ./runtime/v1/rshim
+ifeq ($(GOARCH),arm64)
+	RUST_TARGET = aarch64-unknown-linux-gnu
+else
+	RUST_TARGET = x86_64-unknown-linux-musl
+endif
+RSHIM_TARGET = $(RSHIM_ROOT)/target/$(RUST_TARGET)/debug
+
+RSHIM_V2_ROOT = ./cmd/rust-extensions/crates/runc-shim
+RSHIM_V2_RUST_UN = /usr/local/lib/rustlib/uninstall.sh
+ifeq ($(GOARCH),arm64)
+	RSHIM_V2_TARGET = aarch64-unknown-linux-musl
+	RSHIM_V2_RUST_GNU = /usr/local/rust/rust-1.57.0-aarch64-unknown-linux-gnu
+	RSHIM_V2_RUST_MUSL = /usr/local/rust/rust-1.57.0-aarch64-unknown-linux-musl
+	RSHIM_V2_BIN = ./cmd/rust-extensions/target/aarch64-unknown-linux-musl/release
+else
+	RSHIM_V2_TARGET = x86_64-unknown-linux-musl
+	RSHIM_V2_RUST_GNU = /usr/local/rust/rust-1.57.0-x86_64-unknown-linux-gnu
+	RSHIM_V2_RUST_MUSL = /usr/local/rust/rust-1.57.0-x86_64-unknown-linux-musl
+	RSHIM_V2_BIN = ./cmd/rust-extensions/target/x86_64-unknown-linux-musl/release
+endif
 
 # Use this to replace `go test` with, for instance, `gotestsum`
 GOTEST ?= $(GO) test
@@ -258,6 +293,23 @@ bin/containerd-shim: cmd/containerd-shim FORCE # set !cgo and omit pie for a sta
 	@echo "$(WHALE) $@"
 	@CGO_ENABLED=${SHIM_CGO_ENABLED} $(GO) build ${GO_BUILD_FLAGS} -o $@ ${SHIM_GO_LDFLAGS} ${GO_TAGS} ./cmd/containerd-shim
 
+bin/containerd-rshim: FORCE
+ifeq ($(GOARCH),arm64)
+	tar -xzvf /home/rust-1.45.0-aarch64-unknown-linux-gnu.tar.gz -C  /usr/local/rust/
+	/usr/local/rust/rust-1.45.0-aarch64-unknown-linux-gnu/install.sh
+endif
+	@echo "$(WHALE) bin/containerd-rshim"
+	cd $(RSHIM_ROOT) && cargo build --target=$(RUST_TARGET)
+	cp $(RSHIM_TARGET)/containerd-rshim bin/
+
+bin/containerd-shim-runc-v2-rs: FORCE
+	@echo "$(WHALE) bin/containerd-shim-runc-v2-rs"
+	$(RSHIM_V2_RUST_MUSL)/install.sh
+	$(RSHIM_V2_RUST_GNU)/install.sh
+	cd $(RSHIM_V2_ROOT) && cargo build --release --target=$(RSHIM_V2_TARGET)
+	cp $(RSHIM_V2_BIN)/containerd-shim-runc-v2-rs bin/
+	$(RSHIM_V2_RUST_UN)
+
 bin/containerd-shim-runc-v1: cmd/containerd-shim-runc-v1 FORCE # set !cgo and omit pie for a static shim build: https://github.com/golang/go/issues/17789#issuecomment-258542220
 	@echo "$(WHALE) $@"
 	@CGO_ENABLED=${SHIM_CGO_ENABLED} $(GO) build ${GO_BUILD_FLAGS} -o $@ ${SHIM_GO_LDFLAGS} ${GO_TAGS} ./cmd/containerd-shim-runc-v1
@@ -268,7 +320,8 @@ bin/containerd-shim-runc-v2: cmd/containerd-shim-runc-v2 FORCE # set !cgo and om
 
 binaries: $(BINARIES) ## build binaries
 	@echo "$(WHALE) $@"
-
+coverity: $(BINARIESCOVERITY)
+	@echo "$(WHALE) $@"
 man: mandir $(addprefix man/,$(MANPAGES))
 	@echo "$(WHALE) $@"
 
@@ -396,6 +449,8 @@ clean: ## clean up binaries
 	@rm -f releases/*.tar.gz*
 	@rm -rf $(OUTPUTDIR)
 	@rm -rf bin/cri-integration.test
+	@cd $(RSHIM_ROOT) && cargo clean
+	@cd $(RSHIM_V2_ROOT) && cargo clean
 
 clean-test: ## clean up debris from previously failed tests
 	@echo "$(WHALE) $@"
