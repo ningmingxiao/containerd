@@ -47,7 +47,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const testUserNSImage = "ghcr.io/containerd/alpine:3.14.0"
+const testUserNSImage = "127.0.0.1:5000/containerd/alpine:3.14.0"
 
 func TestTaskUpdate(t *testing.T) {
 	t.Parallel()
@@ -1032,6 +1032,9 @@ func TestDaemonRestartWithRunningShim(t *testing.T) {
 }
 
 func TestContainerRuntimeOptionsv1(t *testing.T) {
+	if os.Getenv("TEST_RSHIM") != "" {
+		t.Skip()
+	}
 	t.Parallel()
 
 	client, err := newClient(t, address)

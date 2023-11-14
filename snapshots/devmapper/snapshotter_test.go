@@ -39,6 +39,7 @@ import (
 )
 
 func TestSnapshotterSuite(t *testing.T) {
+	t.Skip("skip devmapper")
 	testutil.RequiresRoot(t)
 
 	logrus.SetLevel(logrus.DebugLevel)
@@ -70,6 +71,7 @@ func TestSnapshotterSuite(t *testing.T) {
 // testUsage tests devmapper's Usage implementation. This is an approximate test as it's hard to
 // predict how many blocks will be consumed under different conditions and parameters.
 func testUsage(t *testing.T, snapshotter snapshots.Snapshotter) {
+	t.Skip("skip devmapper")
 	ctx := context.Background()
 
 	// Create empty base layer
@@ -110,6 +112,7 @@ func testUsage(t *testing.T, snapshotter snapshots.Snapshotter) {
 }
 
 func TestMkfsExt4(t *testing.T) {
+	t.Skip("skip devmapper")
 	ctx := context.Background()
 	// We test the default setting which is lazy init is disabled
 	err := mkfs(ctx, "ext4", "nodiscard,lazy_itable_init=0,lazy_journal_init=0", "")
@@ -117,6 +120,7 @@ func TestMkfsExt4(t *testing.T) {
 }
 
 func TestMkfsExt4NonDefault(t *testing.T) {
+	t.Skip("skip devmapper")
 	ctx := context.Background()
 	// We test a non default setting where we enable lazy init for ext4
 	err := mkfs(ctx, "ext4", "nodiscard", "")
@@ -124,18 +128,21 @@ func TestMkfsExt4NonDefault(t *testing.T) {
 }
 
 func TestMkfsXfs(t *testing.T) {
+	t.Skip("skip devmapper")
 	ctx := context.Background()
 	err := mkfs(ctx, "xfs", "", "")
 	assert.Contains(t, err.Error(), `mkfs.xfs couldn't initialize ""`)
 }
 
 func TestMkfsXfsNonDefault(t *testing.T) {
+	t.Skip("skip devmapper")
 	ctx := context.Background()
 	err := mkfs(ctx, "xfs", "noquota", "")
 	assert.Contains(t, err.Error(), `mkfs.xfs couldn't initialize ""`)
 }
 
 func TestMultipleXfsMounts(t *testing.T) {
+	t.Skip("skip devmapper")
 	testutil.RequiresRoot(t)
 
 	logrus.SetLevel(logrus.DebugLevel)

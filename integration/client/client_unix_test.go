@@ -19,6 +19,7 @@
 package client
 
 import (
+	"runtime"
 	"testing"
 
 	. "github.com/containerd/containerd"
@@ -55,7 +56,10 @@ func TestImagePullSchema1WithEmptyLayers(t *testing.T) {
 	ctx, cancel := testContext(t)
 	defer cancel()
 
-	schema1TestImageWithEmptyLayers := "gcr.io/google-containers/busybox@sha256:d8d3bc2c183ed2f9f10e7258f84971202325ee6011ba137112e01e30f206de67"
+	schema1TestImageWithEmptyLayers := "127.0.0.1:5000/alpine@sha256:6ed4366fc1b6558fe78cd8d3a524e8cb45948d6e9526910fe48cf475cef0a944"
+	if runtime.GOARCH == "arm64" {
+		schema1TestImageWithEmptyLayers = "127.0.0.1:5000/alpine@sha256:549694ea68340c26d1d85c00039aa11ad835be279bfd475ff4284b705f92c24e"
+	}
 	_, err = client.Pull(ctx, schema1TestImageWithEmptyLayers, WithPlatform(platforms.DefaultString()), WithSchema1Conversion, WithPullUnpack)
 	if err != nil {
 		t.Fatal(err)

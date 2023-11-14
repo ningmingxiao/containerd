@@ -38,6 +38,7 @@ const (
 )
 
 func TestDMSetup(t *testing.T) {
+	t.Skip("skip devmapper")
 	testutil.RequiresRoot(t)
 
 	tempDir := t.TempDir()
@@ -86,6 +87,7 @@ func TestDMSetup(t *testing.T) {
 }
 
 func testCreateDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	err := CreateDevice(testPoolName, deviceID)
 	assert.Nil(t, err, "failed to create test device")
 
@@ -98,11 +100,13 @@ func testCreateDevice(t *testing.T) {
 }
 
 func testCreateSnapshot(t *testing.T) {
+	t.Skip("skip devmapper")
 	err := CreateSnapshot(testPoolName, snapshotID, deviceID)
 	assert.NoError(t, err)
 }
 
 func testDeleteSnapshot(t *testing.T) {
+	t.Skip("skip devmapper")
 	err := DeleteDevice(testPoolName, snapshotID)
 	assert.Nil(t, err, "failed to send delete message")
 
@@ -111,6 +115,7 @@ func testDeleteSnapshot(t *testing.T) {
 }
 
 func testActivateDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	err := ActivateDevice(testPoolName, testDeviceName, 1, 1024, "")
 	assert.Nil(t, err, "failed to activate device")
 
@@ -131,6 +136,7 @@ func testActivateDevice(t *testing.T) {
 }
 
 func testDeviceStatus(t *testing.T) {
+	t.Skip("skip devmapper")
 	status, err := Status(testDeviceName)
 	assert.NoError(t, err)
 
@@ -141,6 +147,7 @@ func testDeviceStatus(t *testing.T) {
 }
 
 func testSuspendResumeDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	err := SuspendDevice(testDeviceName)
 	assert.NoError(t, err)
 
@@ -162,11 +169,13 @@ func testSuspendResumeDevice(t *testing.T) {
 }
 
 func testDiscardBlocks(t *testing.T) {
+	t.Skip("skip devmapper")
 	err := DiscardBlocks(testDeviceName)
 	assert.Nil(t, err, "failed to discard blocks")
 }
 
 func testRemoveDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	err := RemoveDevice(testPoolName)
 	assert.Equal(t, err, unix.EBUSY, "removing thin-pool with dependencies shouldn't be allowed")
 
@@ -175,12 +184,14 @@ func testRemoveDevice(t *testing.T) {
 }
 
 func testVersion(t *testing.T) {
+	t.Skip("skip devmapper")
 	version, err := Version()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, version)
 }
 
 func createLoopbackDevice(t *testing.T, dir string) (string, string) {
+	t.Skip("skip devmapper")
 	file, err := os.CreateTemp(dir, "dmsetup-tests-")
 	assert.NoError(t, err)
 

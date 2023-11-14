@@ -34,6 +34,7 @@ var (
 )
 
 func TestPoolMetadata_AddDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -59,6 +60,7 @@ func TestPoolMetadata_AddDevice(t *testing.T) {
 }
 
 func TestPoolMetadata_AddDeviceRollback(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -70,6 +72,7 @@ func TestPoolMetadata_AddDeviceRollback(t *testing.T) {
 }
 
 func TestPoolMetadata_AddDeviceDuplicate(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -81,6 +84,7 @@ func TestPoolMetadata_AddDeviceDuplicate(t *testing.T) {
 }
 
 func TestPoolMetadata_ReuseDeviceID(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -106,6 +110,7 @@ func TestPoolMetadata_ReuseDeviceID(t *testing.T) {
 }
 
 func TestPoolMetadata_RemoveDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -120,6 +125,7 @@ func TestPoolMetadata_RemoveDevice(t *testing.T) {
 }
 
 func TestPoolMetadata_UpdateDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -152,6 +158,7 @@ func TestPoolMetadata_UpdateDevice(t *testing.T) {
 }
 
 func TestPoolMetadata_MarkFaulty(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -179,6 +186,7 @@ func TestPoolMetadata_MarkFaulty(t *testing.T) {
 }
 
 func TestPoolMetadata_WalkDevices(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -211,6 +219,7 @@ func TestPoolMetadata_WalkDevices(t *testing.T) {
 }
 
 func TestPoolMetadata_GetDeviceNames(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 set -e
-version=1.7.3
+version=1.7.6
 RPM_BUILD_DIR="/root/rpmbuild"
 rm -rf  $RPM_BUILD_DIR/BUILD
 rm -rf  $RPM_BUILD_DIR/BUILDROOT

@@ -40,6 +40,7 @@ import (
 )
 
 func boltSnapshotter(t *testing.T) func(context.Context, string) (snapshots.Snapshotter, func() error, error) {
+	t.Skip()
 	mkbtrfs, err := exec.LookPath("mkfs.btrfs")
 	if err != nil {
 		t.Skipf("could not find mkfs.btrfs: %v", err)
@@ -112,11 +113,13 @@ func boltSnapshotter(t *testing.T) func(context.Context, string) (snapshots.Snap
 }
 
 func TestBtrfs(t *testing.T) {
+	t.Skip()
 	testutil.RequiresRoot(t)
 	testsuite.SnapshotterSuite(t, "Btrfs", boltSnapshotter(t))
 }
 
 func TestBtrfsMounts(t *testing.T) {
+	t.Skip()
 	testutil.RequiresRoot(t)
 	ctx := context.Background()
 

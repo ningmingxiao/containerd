@@ -51,6 +51,7 @@ if [ -z "${CONTAINERD_CONFIG_FILE}" ]; then
 version=2
 
 [plugins."io.containerd.grpc.v1.cri"]
+  sandbox_image = "127.0.0.1:5000/pause:3.5"
   drain_exec_sync_io_timeout = "10s"
 EOF
 

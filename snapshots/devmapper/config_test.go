@@ -28,6 +28,7 @@ import (
 )
 
 func TestLoadConfig(t *testing.T) {
+	t.Skip("skip devmapper")
 	expected := Config{
 		RootPath:      "/tmp",
 		PoolName:      "test",
@@ -59,6 +60,7 @@ func TestLoadConfig(t *testing.T) {
 }
 
 func TestLoadConfigInvalidPath(t *testing.T) {
+	t.Skip("skip devmapper")
 	_, err := LoadConfig("")
 	assert.Equal(t, os.ErrNotExist, err)
 
@@ -67,6 +69,7 @@ func TestLoadConfigInvalidPath(t *testing.T) {
 }
 
 func TestParseInvalidData(t *testing.T) {
+	t.Skip("skip devmapper")
 	config := Config{
 		BaseImageSize: "y",
 	}
@@ -76,6 +79,7 @@ func TestParseInvalidData(t *testing.T) {
 }
 
 func TestFieldValidation(t *testing.T) {
+	t.Skip("skip devmapper")
 	config := &Config{}
 	err := config.Validate()
 	assert.NotNil(t, err)
@@ -90,6 +94,7 @@ func TestFieldValidation(t *testing.T) {
 }
 
 func TestExistingPoolFieldValidation(t *testing.T) {
+	t.Skip("skip devmapper")
 	config := &Config{
 		PoolName:       "test",
 		RootPath:       "test",

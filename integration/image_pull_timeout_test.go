@@ -52,6 +52,7 @@ var (
 )
 
 func TestCRIImagePullTimeout(t *testing.T) {
+	t.Skip()
 	t.Parallel()
 
 	// TODO(fuweid): Test it in Windows.

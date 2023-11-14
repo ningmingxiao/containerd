@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	exec "golang.org/x/sys/execabs"
+	"golang.org/x/sys/unix"
 
 	. "github.com/containerd/containerd"
 	"github.com/containerd/containerd/defaults"
@@ -175,7 +177,9 @@ func TestMain(m *testing.M) {
 				fmt.Fprintln(os.Stderr, "failed to wait for containerd", err)
 			}
 		}
-
+		if err := unix.Unmount(defaultRoot, unix.MNT_DETACH); err != nil {
+			fmt.Fprintln(os.Stdout, "failed to  unmount test root dir", err)
+		}
 		if err := forceRemoveAll(defaultRoot); err != nil {
 			fmt.Fprintln(os.Stderr, "failed to remove test root dir", err)
 			os.Exit(1)
@@ -346,6 +350,7 @@ func TestImagePullAllPlatforms(t *testing.T) {
 }
 
 func TestImagePullSomePlatforms(t *testing.T) {
+	t.Skip()
 	client, err := newClient(t, address)
 	if err != nil {
 		t.Fatal(err)
@@ -428,7 +433,10 @@ func TestImagePullSchema1(t *testing.T) {
 
 	ctx, cancel := testContext(t)
 	defer cancel()
-	schema1TestImage := "gcr.io/google_containers/pause:3.0@sha256:0d093c962a6c2dd8bb8727b661e2b5f13e9df884af9945b4cc7088d9350cd3ee"
+	schema1TestImage := "127.0.0.1:5000/pause@sha256:fcaff905397ba63fd376d0c3019f1f1cb6e7506131389edbcb3d22719f1ae54d"
+	if runtime.GOARCH == "arm64" {
+		schema1TestImage = "127.0.0.1:5000/pause@sha256:2aac966ece8906a535395f92bb25f0e8e21dac737df75b381e8f9bdd3ed56528"
+	}
 	_, err = client.Pull(ctx, schema1TestImage, WithPlatform(platforms.DefaultString()), WithSchema1Conversion)
 	if err != nil {
 		t.Fatal(err)

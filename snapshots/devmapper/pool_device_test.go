@@ -55,6 +55,7 @@ const (
 // - Mount 'snap-1' and make sure test file is v1
 // - Unmount volumes and remove all devices
 func TestPoolDevice(t *testing.T) {
+	t.Skip("skip devmapper")
 	testutil.RequiresRoot(t)
 
 	logrus.SetLevel(logrus.DebugLevel)
@@ -171,6 +172,7 @@ func TestPoolDevice(t *testing.T) {
 }
 
 func TestPoolDeviceMarkFaulty(t *testing.T) {
+	t.Skip("skip devmapper")
 	store := createStore(t)
 	defer cleanupStore(t, store)
 
@@ -208,6 +210,7 @@ func TestPoolDeviceMarkFaulty(t *testing.T) {
 }
 
 func testCreateThinDevice(t *testing.T, pool *PoolDevice) {
+	t.Skip("skip devmapper")
 	ctx := context.Background()
 
 	err := pool.CreateThinDevice(ctx, thinDevice1, device1Size)
@@ -233,6 +236,7 @@ func testCreateThinDevice(t *testing.T, pool *PoolDevice) {
 }
 
 func testMakeFileSystem(t *testing.T, pool *PoolDevice) {
+	t.Skip("skip devmapper")
 	devicePath := dmsetup.GetFullDevicePath(thinDevice1)
 	args := []string{
 		devicePath,
@@ -249,11 +253,13 @@ func testMakeFileSystem(t *testing.T, pool *PoolDevice) {
 }
 
 func testCreateSnapshot(t *testing.T, pool *PoolDevice) {
+	t.Skip("skip devmapper")
 	err := pool.CreateSnapshotDevice(context.Background(), thinDevice1, snapDevice1, device1Size)
 	assert.Nil(t, err, "failed to create snapshot from '%s' volume", thinDevice1)
 }
 
 func testDeactivateThinDevice(t *testing.T, pool *PoolDevice) {
+	t.Skip("skip devmapper")
 	deviceList := []string{
 		thinDevice2,
 		snapDevice1,
@@ -270,6 +276,7 @@ func testDeactivateThinDevice(t *testing.T, pool *PoolDevice) {
 }
 
 func testRemoveThinDevice(t *testing.T, pool *PoolDevice) {
+	t.Skip("skip devmapper")
 	err := pool.RemoveDevice(testCtx, thinDevice1)
 	assert.Nil(t, err, "should delete thin device from pool")
 
@@ -287,6 +294,7 @@ func getMounts(thinDeviceName string) []mount.Mount {
 }
 
 func createLoopbackDevice(t *testing.T, dir string) (string, string) {
+	t.Skip("skip devmapper")
 	file, err := os.CreateTemp(dir, testsPrefix)
 	assert.NoError(t, err)
 

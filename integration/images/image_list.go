@@ -49,11 +49,11 @@ var initOnce sync.Once
 func initImages(imageListFile string) {
 	imageList = ImageList{
 		Alpine:           "ghcr.io/containerd/alpine:3.14.0",
-		BusyBox:          "ghcr.io/containerd/busybox:1.36",
-		Pause:            "registry.k8s.io/pause:3.8",
-		ResourceConsumer: "registry.k8s.io/e2e-test-images/resource-consumer:1.10",
-		VolumeCopyUp:     "ghcr.io/containerd/volume-copy-up:2.1",
-		VolumeOwnership:  "ghcr.io/containerd/volume-ownership:2.1",
+		BusyBox:          "127.0.0.1:5000/containerd/busybox:1.32",
+		Pause:            "127.0.0.1:5000/pause:3.5",
+		ResourceConsumer: "127.0.0.1:5000/resource-consumer:1.9",
+		VolumeCopyUp:     "127.0.0.1:5000/volume-copy-up:2.0",
+		VolumeOwnership:  "127.0.0.1:5000/volume-ownership:2.0",
 		ArgsEscaped:      "cplatpublic.azurecr.io/args-escaped-test-image-ns:1.0",
 	}
 
