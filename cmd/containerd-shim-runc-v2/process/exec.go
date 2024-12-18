@@ -95,6 +95,8 @@ func (e *execProcess) setExited(status int) {
 	e.status = status
 	e.exited = time.Now()
 	e.parent.Platform.ShutdownConsole(context.Background(), e.console)
+	e.wg.Wait()
+
 	close(e.waitBlock)
 }
 
