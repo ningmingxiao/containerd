@@ -147,6 +147,17 @@ var configCommand = &cli.Command{
 					}
 				}
 
+				if config.Version < version.ConfigVersion {
+					if config.Timeouts == nil {
+						config.Timeouts = make(map[string]string)
+					}
+					for k, v := range timeout.All() {
+						if config.Timeouts[k] == "" {
+							config.Timeouts[k] = v.String()
+						}
+					}
+				}
+
 				config.Version = version.ConfigVersion
 
 				return toml.NewEncoder(os.Stdout).SetIndentTables(true).Encode(config)
