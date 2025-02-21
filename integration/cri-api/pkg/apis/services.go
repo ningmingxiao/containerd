@@ -62,7 +62,7 @@ type ContainerManager interface {
 	// ListContainers lists all containers by filters.
 	ListContainers(filter *runtimeapi.ContainerFilter, opts ...grpc.CallOption) ([]*runtimeapi.Container, error)
 	// ContainerStatus returns the status of the container.
-	ContainerStatus(containerID string, opts ...grpc.CallOption) (*runtimeapi.ContainerStatus, error)
+	ContainerStatus(containerID string, opts ...grpc.CallOption) (*runtimeapi.ContainerStatusResponse, error)
 	// UpdateContainerResources updates the cgroup resources for the container.
 	UpdateContainerResources(containerID string, resources *runtimeapi.LinuxContainerResources, windowsResources *runtimeapi.WindowsContainerResources, opts ...grpc.CallOption) error
 	// ExecSync executes a command in the container, and returns the stdout output.
