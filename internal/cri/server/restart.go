@@ -174,8 +174,6 @@ func (c *criService) recover(ctx context.Context) error {
 					WithError(err).
 					WithField("container", container.ID()).
 					Error("Failed to load container")
-
-				return nil
 			}
 			log.G(ctx2).Debugf("Loaded container %+v", cntr)
 			if err := c.containerStore.Add(cntr); err != nil {
