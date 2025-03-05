@@ -95,7 +95,7 @@ func TestTruncIndex(t *testing.T) {
 	t.Logf("Get container status by truncindex")
 	cStatus, err := runtimeService.ContainerStatus(cnTruncIndex)
 	require.NoError(t, err)
-	assert.Equal(t, cn, cStatus.Id)
+	assert.Equal(t, cn, cStatus.Status.Id)
 
 	t.Logf("Start the container")
 	require.NoError(t, runtimeService.StartContainer(cnTruncIndex))

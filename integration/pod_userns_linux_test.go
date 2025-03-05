@@ -289,7 +289,7 @@ func TestPodUserNS(t *testing.T) {
 				if err != nil {
 					return false, err
 				}
-				if s.GetState() == runtime.ContainerState_CONTAINER_EXITED {
+				if s.Status.GetState() == runtime.ContainerState_CONTAINER_EXITED {
 					return true, nil
 				}
 				return false, nil
@@ -410,7 +410,7 @@ func TestIssue10598(t *testing.T) {
 			return false, err
 		}
 
-		if state := s.GetState(); state != runtime.ContainerState_CONTAINER_RUNNING {
+		if state := s.Status.GetState(); state != runtime.ContainerState_CONTAINER_RUNNING {
 			return false, fmt.Errorf("%s is not running\nstate: %s\nlog: %s",
 				containerName, state, string(content))
 		}

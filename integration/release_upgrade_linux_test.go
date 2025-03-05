@@ -533,7 +533,7 @@ func (pCtx *podTCtx) containerDataDir(cntrID string) string {
 	cfg := criRuntimeInfo(t, pCtx.rSvc)
 
 	rootDir := cfg["rootDir"].(string)
-	return filepath.Join(rootDir, "containers", status.Id)
+	return filepath.Join(rootDir, "containers", status.Status.Id)
 }
 
 // shimPid returns shim's pid.
@@ -589,7 +589,7 @@ func checkContainerState(t *testing.T, svc cri.RuntimeService, name string, expe
 	t.Logf("Checking container %s state", name)
 	status, err := svc.ContainerStatus(name)
 	require.NoError(t, err)
-	assert.Equal(t, expected, status.State)
+	assert.Equal(t, expected, status.Status.State)
 }
 
 // pullImagesByCRI pulls images by CRI.

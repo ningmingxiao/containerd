@@ -334,7 +334,7 @@ func (r *RuntimeService) ListContainers(filter *runtimeapi.ContainerFilter, opts
 }
 
 // ContainerStatus returns the container status.
-func (r *RuntimeService) ContainerStatus(containerID string, opts ...grpc.CallOption) (*runtimeapi.ContainerStatus, error) {
+func (r *RuntimeService) ContainerStatus(containerID string, opts ...grpc.CallOption) (*runtimeapi.ContainerStatusResponse, error) {
 	klog.V(10).Infof("[RuntimeService] ContainerStatus (containerID=%v, timeout=%v)", containerID, r.timeout)
 	ctx, cancel := getContextWithTimeout(r.timeout)
 	defer cancel()
@@ -359,7 +359,7 @@ func (r *RuntimeService) ContainerStatus(containerID string, opts ...grpc.CallOp
 		}
 	}
 
-	return resp.Status, nil
+	return resp, nil
 }
 
 // UpdateContainerResources updates a containers resource config

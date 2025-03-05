@@ -67,7 +67,7 @@ func TestSharedPidMultiProcessContainerStop(t *testing.T) {
 			t.Log("The container state should be exited")
 			s, err := runtimeService.ContainerStatus(cn)
 			require.NoError(t, err)
-			assert.Equal(t, runtime.ContainerState_CONTAINER_EXITED, s.GetState())
+			assert.Equal(t, runtime.ContainerState_CONTAINER_EXITED, s.Status.GetState())
 		})
 	}
 }
@@ -117,7 +117,7 @@ func TestContainerStopCancellation(t *testing.T) {
 		if err != nil {
 			return false, err
 		}
-		return s.GetState() == runtime.ContainerState_CONTAINER_RUNNING, nil
+		return s.Status.GetState() == runtime.ContainerState_CONTAINER_RUNNING, nil
 	}, 100*time.Millisecond, 5*time.Second))
 
 	t.Log("Stop the container with 1s timeout, without shorter context timeout")
@@ -126,5 +126,5 @@ func TestContainerStopCancellation(t *testing.T) {
 	t.Log("The container state should be exited")
 	s, err := runtimeService.ContainerStatus(cn)
 	require.NoError(t, err)
-	assert.Equal(t, runtime.ContainerState_CONTAINER_EXITED, s.GetState())
+	assert.Equal(t, runtime.ContainerState_CONTAINER_EXITED, s.Status.GetState())
 }

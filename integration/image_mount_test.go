@@ -102,7 +102,7 @@ func testImageMountSELinux(t *testing.T, testImage, testMountImage, mountPath st
 		if err != nil {
 			return false, err
 		}
-		if s.GetState() == criruntime.ContainerState_CONTAINER_EXITED {
+		if s.Status.GetState() == criruntime.ContainerState_CONTAINER_EXITED {
 			return true, nil
 		}
 		return false, nil
@@ -149,7 +149,7 @@ func testImageMount(t *testing.T, testImage, testMountImage, mountPath string, c
 		if err != nil {
 			return false, err
 		}
-		if s.GetState() == criruntime.ContainerState_CONTAINER_EXITED {
+		if s.Status.GetState() == criruntime.ContainerState_CONTAINER_EXITED {
 			return true, nil
 		}
 		return false, nil

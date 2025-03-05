@@ -325,7 +325,7 @@ func TestUpdateContainerResources_StatusUpdated(t *testing.T) {
 
 	t.Log("Check memory limit in container status")
 	status, err := runtimeService.ContainerStatus(cn)
-	checkMemoryLimitInContainerStatus(t, status, 200*1024*1024)
+	checkMemoryLimitInContainerStatus(t, status.Status, 200*1024*1024)
 	require.NoError(t, err)
 
 	t.Log("Update container memory limit after created")
@@ -336,7 +336,7 @@ func TestUpdateContainerResources_StatusUpdated(t *testing.T) {
 
 	t.Log("Check memory limit in container status")
 	status, err = runtimeService.ContainerStatus(cn)
-	checkMemoryLimitInContainerStatus(t, status, 400*1024*1024)
+	checkMemoryLimitInContainerStatus(t, status.Status, 400*1024*1024)
 	require.NoError(t, err)
 
 	t.Log("Start the container")
@@ -350,6 +350,6 @@ func TestUpdateContainerResources_StatusUpdated(t *testing.T) {
 
 	t.Log("Check memory limit in container status")
 	status, err = runtimeService.ContainerStatus(cn)
-	checkMemoryLimitInContainerStatus(t, status, 800*1024*1024)
+	checkMemoryLimitInContainerStatus(t, status.Status, 800*1024*1024)
 	require.NoError(t, err)
 }
