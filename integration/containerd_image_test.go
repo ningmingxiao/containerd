@@ -155,10 +155,10 @@ func TestContainerdImage(t *testing.T) {
 		if err != nil {
 			return false, err
 		}
-		if s.Resources == nil || (s.Resources.Linux == nil && s.Resources.Windows == nil) {
+		if s.Status.Resources == nil || (s.Status.Resources.Linux == nil && s.Status.Resources.Windows == nil) {
 			return false, fmt.Errorf("No Resource field in container status: %+v", s)
 		}
-		return s.GetState() == runtime.ContainerState_CONTAINER_RUNNING, nil
+		return s.Status.GetState() == runtime.ContainerState_CONTAINER_RUNNING, nil
 	}
 	require.NoError(t, Eventually(checkContainer, 100*time.Millisecond, 10*time.Second))
 	require.NoError(t, Consistently(checkContainer, 100*time.Millisecond, time.Second))

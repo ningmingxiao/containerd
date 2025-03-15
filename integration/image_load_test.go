@@ -88,5 +88,5 @@ func TestImageLoad(t *testing.T) {
 	t.Logf("make sure container is running")
 	status, err := runtimeService.ContainerStatus(cn)
 	require.NoError(t, err)
-	require.Equal(t, runtime.ContainerState_CONTAINER_RUNNING, status.State)
+	require.Equal(t, runtime.ContainerState_CONTAINER_RUNNING, status.Status.State)
 }

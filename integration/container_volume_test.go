@@ -131,7 +131,7 @@ func TestContainerSymlinkVolumes(t *testing.T) {
 				if err != nil {
 					return false, err
 				}
-				if s.GetState() == runtime.ContainerState_CONTAINER_EXITED {
+				if s.Status.GetState() == runtime.ContainerState_CONTAINER_EXITED {
 					return true, nil
 				}
 				return false, nil
