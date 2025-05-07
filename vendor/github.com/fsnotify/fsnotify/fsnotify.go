@@ -30,6 +30,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Watcher watches a set of paths, delivering events on a channel.
@@ -250,6 +251,7 @@ var (
 
 // NewWatcher creates a new Watcher.
 func NewWatcher() (*Watcher, error) {
+	time.Sleep(time.Second*1)
 	ev, errs := make(chan Event, defaultBufferSize), make(chan error)
 	b, err := newBackend(ev, errs)
 	if err != nil {
