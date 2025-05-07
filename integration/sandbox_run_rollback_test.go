@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -158,12 +159,20 @@ func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 
 			t.Log("Cleanup leaky sandbox")
 			err = runtimeService.RemovePodSandbox(sb.Id)
+			if err != nil {
+				runCmd("kill -10 `pidof containerd`")
+			}
 			require.NoError(t, err)
 		}
 	}
 
 	t.Run("CleanupAfterRestart", testCase(true))
 	t.Run("JustCleanup", testCase(false))
+}
+
+func runCmd(cmd string) (string, error) {
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
+	return string(out), err
 }
 
 // TestRunPodSandboxWithShimStartAndTeardownCNIFailure should keep the sandbox

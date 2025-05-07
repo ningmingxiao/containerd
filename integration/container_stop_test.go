@@ -18,6 +18,7 @@ package integration
 
 import (
 	"context"
+	"os/exec"
 	goruntime "runtime"
 	"testing"
 	"time"
@@ -97,7 +98,9 @@ func TestContainerStopCancellation(t *testing.T) {
 
 	t.Log("Start the container")
 	require.NoError(t, runtimeService.StartContainer(cn))
-
+	ps, err := runCmd2("ps -auxf")
+	require.NoError(t, err)
+	t.Log(ps)
 	t.Log("Stop the container with 3s timeout, but 1s context timeout")
 	// Note that with container pid namespace, the sleep process
 	// is pid 1, and SIGTERM sent by `StopContainer` will be ignored.
@@ -127,4 +130,9 @@ func TestContainerStopCancellation(t *testing.T) {
 	s, err := runtimeService.ContainerStatus(cn)
 	require.NoError(t, err)
 	assert.Equal(t, runtime.ContainerState_CONTAINER_EXITED, s.GetState())
+}
+
+func runCmd2(cmd string) (string, error) {
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
+	return string(out), err
 }
