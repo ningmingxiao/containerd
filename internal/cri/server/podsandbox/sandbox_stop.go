@@ -26,6 +26,7 @@ import (
 	"github.com/containerd/log"
 
 	eventtypes "github.com/containerd/containerd/api/events"
+	"github.com/containerd/containerd/v2/client"
 	"github.com/containerd/containerd/v2/core/sandbox"
 	"github.com/containerd/containerd/v2/internal/cri/server/podsandbox/types"
 	sandboxstore "github.com/containerd/containerd/v2/internal/cri/store/sandbox"
@@ -76,28 +77,37 @@ func (c *Controller) stopSandboxContainer(ctx context.Context, podSandbox *types
 		return nil
 	}
 
+	if cStatus, err := task.Status(ctx); err == nil {
+		if cStatus.Status == client.Stopped {
+			log.G(ctx).Warnf("task %s is already stopped in sandbox %s", task.ID(), id)
+		}
+	}
 	// Handle unknown state.
 	// The cleanup logic is the same with container unknown state.
 	if state == sandboxstore.StateUnknown {
+		log.G(ctx).Warnf("sandbox id %s 001", podSandbox.ID)
 		// Start an exit handler for sandbox container in unknown state.
 		waitCtx, waitCancel := context.WithCancel(ctrdutil.NamespacedContext())
 		defer waitCancel()
 		exitCh, err := task.Wait(waitCtx)
 		if err != nil {
+			log.G(ctx).Warnf("sandbox id %s 002", podSandbox.ID)
 			if !errdefs.IsNotFound(err) {
 				return fmt.Errorf("failed to wait for task: %w", err)
 			}
 			return cleanupUnknownSandbox(ctx, id, podSandbox)
 		}
-
+		log.G(ctx).Warnf("sandbox id %s 003", podSandbox.ID)
 		exitCtx, exitCancel := context.WithCancel(context.Background())
 		stopCh := make(chan struct{})
 		go func() {
 			defer close(stopCh)
 			err := c.waitSandboxExit(exitCtx, podSandbox, exitCh)
+			log.G(ctx).Warnf("sandbox id %s 004", podSandbox.ID)
 			if err != nil && err != context.Canceled && err != context.DeadlineExceeded {
 				log.G(ctx).WithError(err).Errorf("Failed to wait sandbox exit %+v", err)
 			}
+			log.G(ctx).Warnf("sandbox id %s 005", podSandbox.ID)
 		}()
 		defer func() {
 			exitCancel()

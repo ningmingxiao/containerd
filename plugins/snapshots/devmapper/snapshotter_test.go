@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/containerd/continuity/fs/fstest"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/containerd/containerd/v2/core/mount"
@@ -42,12 +43,10 @@ func TestSnapshotterSuite(t *testing.T) {
 	testutil.RequiresRoot(t)
 
 	assert.NoError(t, log.SetLevel("debug"))
-
 	snapshotterFn := func(ctx context.Context, root string) (snapshots.Snapshotter, func() error, error) {
-		poolName := fmt.Sprintf("containerd-snapshotter-suite-pool-%d", time.Now().Nanosecond())
 		config := &Config{
 			RootPath:      root,
-			PoolName:      poolName,
+			PoolName:      fmt.Sprintf("containerd-snapshotter-suite-pool-%s", uuid.NewString()),
 			BaseImageSize: "16Mb",
 		}
 		return createSnapshotter(ctx, t, config)

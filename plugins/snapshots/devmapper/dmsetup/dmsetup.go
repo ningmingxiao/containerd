@@ -21,6 +21,7 @@
 package dmsetup
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -30,6 +31,7 @@ import (
 	"strings"
 
 	blkdiscard "github.com/containerd/containerd/v2/plugins/snapshots/devmapper/blkdiscard"
+	"github.com/containerd/log"
 	"golang.org/x/sys/unix"
 )
 
@@ -372,7 +374,9 @@ func DiscardBlocks(deviceName string) error {
 
 func dmsetup(args ...string) (string, error) {
 	data, err := exec.Command("dmsetup", args...).CombinedOutput()
+	log.G(context.Background()).Infof("dmsetup args %v", args)
 	output := string(data)
+	log.G(context.Background()).Infof("dmsetup output %s", string(data))
 	if err != nil {
 		// Try find Linux error code otherwise return generic error with dmsetup output
 		if errno, ok := tryGetUnixError(output); ok {
@@ -415,7 +419,25 @@ func parseDmsetupError(output string) string {
 
 	line := lines[0]
 	// Handle output like "Device /dev/mapper/snapshotter-suite-pool-snap-1 not found"
-	if strings.HasSuffix(line, "not found") {
+	// Handle output like "Device does not exist.\nCommand failed.\n"
+	if strings.HasSuffix(line, "not found") || strings.HasPrefix(line, "Device does not exist") {
+		data2, err2 := exec.Command("lvdisplay").CombinedOutput()
+		if err2 == nil {
+			log.G(context.Background()).Infof("lvdisplay output %s", string(data2))
+		}
+		data3, err3 := exec.Command("sh", "-c", "dmsetup status").CombinedOutput()
+		if err3 == nil {
+			log.G(context.Background()).Infof("dmsetup status %s", string(data3))
+		}
+		data4, err4 := exec.Command("sh", "-c", "lsblk").CombinedOutput()
+		if err4 == nil {
+			log.G(context.Background()).Infof("lsblk %s", string(data4))
+		}
+
+		data5, err5 := exec.Command("sh", "-c", "df -h").CombinedOutput()
+		if err5 == nil {
+			log.G(context.Background()).Infof("df -h %s", string(data5))
+		}
 		return unix.ENXIO.Error()
 	}
 
