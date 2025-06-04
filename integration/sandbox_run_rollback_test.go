@@ -221,8 +221,19 @@ func TestRunPodSandboxWithShimStartAndTeardownCNIFailure(t *testing.T) {
 			}
 
 			t.Log("Cleanup leaky sandbox")
-			err = runtimeService.RemovePodSandbox(sb.Id)
-			require.NoError(t, err)
+			err1 := runtimeService.RemovePodSandbox(sb.Id)
+			if err1 != nil {
+				for i := 0; i < 3; i++ {
+					if strings.Contains(err.Error(), "please retry") {
+						err = runtimeService.RemovePodSandbox(sb.Id)
+						if err != nil {
+							continue
+						}
+						t.Logf("err is %v err1 is %v", err, err1)
+					}
+				}
+			}
+			require.NoError(t, err1)
 		}
 	}
 	t.Run("CleanupAfterRestart", testCase(true))

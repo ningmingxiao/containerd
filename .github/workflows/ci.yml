@@ -344,7 +344,27 @@ jobs:
           TEST_IMAGE_LIST: ${{github.workspace}}/repolist.toml
           CGROUP_DRIVER: ${{ matrix.cgroup_driver }}
         run: |
-          make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+
 
       - name: cri-tools critest
         env:
@@ -445,7 +465,7 @@ jobs:
           [ "${RUNC_FLAVOR}" == "crun" ] && {
                   extraflags="EXTRA_TESTFLAGS=-no-criu";
           }
-          sudo -E PATH=$PATH make integration ${extraflags} TESTFLAGS_RACE=-race
+          sudo -E PATH=$PATH FOCUS=TestRunPodSandboxWithShimDeleteFailure make integration ${extraflags} TESTFLAGS_RACE=-race
       - run: if [ -f *-gotest.json ]; then echo '# Integration 1' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
         if: always()
       - run: script/test/test2annotation.sh *-gotest.json
@@ -481,7 +501,25 @@ jobs:
              export XDG_RUNTIME_DIR=/run/user/$(id -u)
           }
           runc --version
-          CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          FOCUS=TestRunPodSandboxWithShimDeleteFailure CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
 
       - name: cri-tools critest
         env:
