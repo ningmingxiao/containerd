@@ -76,6 +76,13 @@ func (c *Controller) stopSandboxContainer(ctx context.Context, podSandbox *types
 		return nil
 	}
 
+	if cStatus, err := task.Status(ctx); err != nil {
+		if cStatus.Status == "stopped" {
+			log.G(ctx).Warnf("task %s is already exited in sandbox %s", task.ID(), id)
+			return nil
+		}
+	}
+
 	// Handle unknown state.
 	// The cleanup logic is the same with container unknown state.
 	if state == sandboxstore.StateUnknown {
