@@ -164,7 +164,7 @@ func (m *ShimManager) ID() string {
 // Start launches a new shim instance
 func (m *ShimManager) Start(ctx context.Context, id string, bundle *Bundle, opts runtime.CreateOpts) (_ ShimInstance, retErr error) {
 	shouldInvokeShimBinary := false
-
+	log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx001", opts.SandboxID)
 	var params shimbinary.BootstrapParams
 	if opts.SandboxID != "" {
 		_, sbErr := m.sandboxStore.Get(ctx, opts.SandboxID)
@@ -172,7 +172,7 @@ func (m *ShimManager) Start(ctx context.Context, id string, bundle *Bundle, opts
 			if !errors.Is(sbErr, errdefs.ErrNotFound) {
 				return nil, sbErr
 			}
-
+			log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx002", opts.SandboxID)
 			log.G(ctx).WithField("id", id).Warningf("sandbox (id=%s) not found, maybe created from v1.x", opts.SandboxID)
 			// NOTE: If sandbox container, like pause, is created by
 			// v1.6.x or v1.7.x, the shim may be not able to group
@@ -180,6 +180,7 @@ func (m *ShimManager) Start(ctx context.Context, id string, bundle *Bundle, opts
 			// establish new connection based on returned address.
 			shouldInvokeShimBinary = true
 		} else {
+			log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx003", opts.SandboxID)
 			if opts.Address != "" {
 				// The address returned from sandbox controller should
 				// be in the form like ttrpc+unix://<uds-path> or grpc+vsock://<cid>:<port>,
@@ -209,6 +210,7 @@ func (m *ShimManager) Start(ctx context.Context, id string, bundle *Bundle, opts
 			}
 		}
 	}
+	log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx004", opts.SandboxID)
 	// Even though one shim can be able to group multiple containers,
 	// it doesn't mean it supports sandbox API. The old shim implementation
 	// still requires containerd to invoke `shim delete` to cleanup
@@ -225,26 +227,29 @@ func (m *ShimManager) Start(ctx context.Context, id string, bundle *Bundle, opts
 	}
 
 	if !shouldInvokeShimBinary {
+		log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx0041", opts.SandboxID)
 		// Write sandbox ID this task belongs to.
 		if err := os.WriteFile(filepath.Join(bundle.Path, "sandbox"), []byte(opts.SandboxID), 0600); err != nil {
 			return nil, err
 		}
 
 		if err := writeBootstrapParams(filepath.Join(bundle.Path, "bootstrap.json"), params); err != nil {
+			log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx0042", opts.SandboxID)
 			return nil, fmt.Errorf("failed to write bootstrap.json for bundle %s: %w", bundle.Path, err)
 		}
-
+		log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx005", opts.SandboxID)
 		shim, err := loadShim(ctx, bundle, func() {})
 		if err != nil {
 			return nil, fmt.Errorf("failed to load sandbox task %q: %w", opts.SandboxID, err)
 		}
-
+		log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx006", opts.SandboxID)
 		if err := m.shims.Add(ctx, shim); err != nil {
 			return nil, err
 		}
-
+		log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx007", opts.SandboxID)
 		return shim, nil
 	}
+	log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx0051", opts.SandboxID)
 
 	shim, err := m.startShim(ctx, bundle, id, opts)
 	if err != nil {
@@ -255,11 +260,11 @@ func (m *ShimManager) Start(ctx context.Context, id string, bundle *Bundle, opts
 			m.cleanupShim(ctx, shim)
 		}
 	}()
-
+	log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx0052", opts.SandboxID)
 	if err := m.shims.Add(ctx, shim); err != nil {
 		return nil, fmt.Errorf("failed to add task: %w", err)
 	}
-
+	log.G(ctx).WithField("id", id).Warnf("sandbox (id=%s)   nmx0053", opts.SandboxID)
 	return shim, nil
 }
 
