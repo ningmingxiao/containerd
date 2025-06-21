@@ -198,6 +198,7 @@ func (s *service) preStart(c *runc.Container) (handleStarted func(*runc.Containe
 			s.lifecycleMu.Unlock()
 			for _, ee := range ees {
 				s.handleProcessExit(ee, c, p)
+				log.G(context.Background()).Infof("nmx001 e is %v", ee)
 			}
 		} else {
 			// Process start was successful, add to `s.running`.
@@ -686,8 +687,10 @@ func (s *service) processExits() {
 		for _, cp := range cps {
 			if ip, ok := cp.Process.(*process.Init); ok {
 				s.handleInitExit(e, cp.Container, ip)
+				log.G(context.Background()).Infof("nmx002 e is %v", e)
 			} else {
 				s.handleProcessExit(e, cp.Container, cp.Process)
+				log.G(context.Background()).Infof("nmx003 e is %v", e)
 			}
 		}
 	}
@@ -720,6 +723,7 @@ func (s *service) handleInitExit(e runcC.Exit, c *runc.Container, p *process.Ini
 	if numRunningExecs == 0 {
 		delete(s.runningExecs, c)
 		s.lifecycleMu.Unlock()
+		log.G(context.Background()).Infof("nmx004 e is %v", e)
 		s.handleProcessExit(e, c, p)
 		return
 	}
@@ -746,6 +750,7 @@ func (s *service) handleInitExit(e runcC.Exit, c *runc.Container, p *process.Ini
 
 		// all running processes have exited now, and no new
 		// ones can start, so we can publish the init exit
+		log.G(context.Background()).Infof("nmx005 e is %v", e)
 		s.handleProcessExit(e, c, p)
 	}()
 }

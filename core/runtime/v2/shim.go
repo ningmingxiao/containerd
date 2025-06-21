@@ -25,6 +25,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 	"time"
 
@@ -134,11 +135,16 @@ func loadShim(ctx context.Context, bundle *Bundle, onClose func()) (_ ShimInstan
 	return shim, nil
 }
 
+func stack() string {
+	var buf [2 << 10]byte
+	return string(buf[:goruntime.Stack(buf[:], true)])
+}
+
 func cleanupAfterDeadShim(ctx context.Context, id string, rt *runtime.NSMap[ShimInstance], events *exchange.Exchange, binaryCall *binary) {
 	ctx, cancel := timeout.WithContext(ctx, cleanupTimeout)
 	defer cancel()
-
-	log.G(ctx).WithField("id", id).Info("cleaning up after shim disconnected")
+	log.G(ctx).Infof("nmx666 %s", stack())
+	log.G(ctx).WithField("id", id).Info("cleaning up after shim disconnected001")
 	response, err := binaryCall.Delete(ctx)
 	if err != nil {
 		log.G(ctx).WithError(err).WithField("id", id).Warn("failed to clean up after shim disconnected")

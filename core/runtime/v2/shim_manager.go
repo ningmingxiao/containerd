@@ -234,6 +234,11 @@ func (m *ShimManager) Start(ctx context.Context, id string, bundle *Bundle, opts
 			return nil, fmt.Errorf("failed to write bootstrap.json for bundle %s: %w", bundle.Path, err)
 		}
 
+		// onCloseWithShimLog := func() {
+		// 	onClose()
+		// 	cancelShimLog()
+		// 	f.Close()
+		// }
 		shim, err := loadShim(ctx, bundle, func() {})
 		if err != nil {
 			return nil, fmt.Errorf("failed to load sandbox task %q: %w", opts.SandboxID, err)
@@ -287,7 +292,7 @@ func (m *ShimManager) startShim(ctx context.Context, bundle *Bundle, id string, 
 		env:          m.env,
 	})
 	shim, err := b.Start(ctx, typeurl.MarshalProto(topts), func() {
-		log.G(ctx).WithField("id", id).Info("shim disconnected")
+		log.G(ctx).WithField("id", id).Info("shim disconnected in startShim")
 
 		cleanupAfterDeadShim(context.WithoutCancel(ctx), id, m.shims, m.events, b)
 		// Remove self from the runtime task list. Even though the cleanupAfterDeadShim()

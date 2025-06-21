@@ -178,6 +178,7 @@ func (p *process) Wait(ctx context.Context) (<-chan ExitStatus, error) {
 			ContainerID: p.task.id,
 			ExecID:      p.id,
 		})
+
 		if err != nil {
 			c <- ExitStatus{
 				code: UnknownExitStatus,
