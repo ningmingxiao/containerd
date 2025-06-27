@@ -195,12 +195,14 @@ func handleSandboxTaskExit(ctx context.Context, sb *types.PodSandbox, e *eventty
 			return fmt.Errorf("failed to load task for sandbox: %w", err)
 		}
 	} else {
+		log.G(ctx).Infof("delete task %s", sb.ID)
 		// TODO(random-liu): [P1] This may block the loop, we may want to spawn a worker
 		if _, err = task.Delete(ctx, WithNRISandboxDelete(sb.ID), containerd.WithProcessKill); err != nil {
 			if !errdefs.IsNotFound(err) {
 				return fmt.Errorf("failed to stop sandbox: %w", err)
 			}
 		}
+		log.G(ctx).Infof("delete task %s done", sb.ID)
 	}
 	if err := sb.Exit(e.ExitStatus, protobuf.FromTimestamp(e.ExitedAt)); err != nil {
 		return err
