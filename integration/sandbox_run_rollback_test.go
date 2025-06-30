@@ -157,13 +157,16 @@ func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 			}
 
 			t.Log("Cleanup leaky sandbox")
+			t.Logf("Cleanup leaky sandbox %s", sb.Id)
 			err = runtimeService.RemovePodSandbox(sb.Id)
 			require.NoError(t, err)
 		}
 	}
 
-	t.Run("CleanupAfterRestart", testCase(true))
-	t.Run("JustCleanup", testCase(false))
+	for i := 0; i < 20; i++ {
+		t.Run("CleanupAfterRestart", testCase(true))
+		t.Run("JustCleanup", testCase(false))
+	}
 }
 
 // TestRunPodSandboxWithShimStartAndTeardownCNIFailure should keep the sandbox

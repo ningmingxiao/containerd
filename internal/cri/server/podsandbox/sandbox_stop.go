@@ -18,6 +18,7 @@ package podsandbox
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"syscall"
 	"time"
@@ -107,9 +108,13 @@ func (c *Controller) stopSandboxContainer(ctx context.Context, podSandbox *types
 			<-stopCh
 		}()
 	}
-
 	// Kill the pod sandbox container.
 	if err = task.Kill(ctx, syscall.SIGKILL); err != nil && !errdefs.IsNotFound(err) {
+		// shim is already exited
+		log.G(ctx).Warnf("task %s err is %v", task.ID(), err)
+		if errors.Is(err, errors.New("ttrpc: closed")) {
+			log.G(ctx).Warnf("task %s ", task.ID())
+		}
 		return fmt.Errorf("failed to kill pod sandbox container: %w", err)
 	}
 

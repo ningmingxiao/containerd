@@ -159,6 +159,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 	defer func() {
 		if retErr != nil && cleanupErr == nil {
 			cleanupErr = c.client.SandboxStore().Delete(ctx, id)
+			log.G(ctx).Infof("nmx6001 %s cleanupErr is %v", id, cleanupErr)
 		}
 	}()
 
@@ -214,7 +215,9 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		defer func() {
 			// Remove the network namespace only if all the resource cleanup is done
 			if retErr != nil && cleanupErr == nil {
-				if cleanupErr = sandbox.NetNS.Remove(); cleanupErr != nil {
+				cleanupErr = sandbox.NetNS.Remove()
+				log.G(ctx).Infof("nmx6002 %s cleanupErr is %v", id, cleanupErr)
+				if cleanupErr != nil {
 					log.G(ctx).WithError(cleanupErr).Errorf("Failed to remove network namespace %s for sandbox %q", sandbox.NetNSPath, id)
 					return
 				}
@@ -238,7 +241,10 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 				deferCtx, deferCancel := util.DeferContext()
 				defer deferCancel()
 				// Teardown network if an error is returned.
-				if cleanupErr = c.teardownPodNetwork(deferCtx, sandbox); cleanupErr != nil {
+				cleanupErr = c.teardownPodNetwork(deferCtx, sandbox)
+				log.G(ctx).Infof("nmx6003 %s cleanupErr is %v", id, cleanupErr)
+				if cleanupErr != nil {
+					log.G(ctx).Infof("nmx6003 %s cleanupErr is %v", id, cleanupErr)
 					log.G(ctx).WithError(cleanupErr).Errorf("Failed to destroy network for sandbox %q", id)
 
 					// ignoring failed to destroy networks when we failed to setup networks
@@ -282,6 +288,7 @@ func (c *criService) RunPodSandbox(ctx context.Context, r *runtime.RunPodSandbox
 		var cerr podsandbox.CleanupErr
 		if errors.As(err, &cerr) {
 			cleanupErr = fmt.Errorf("failed to cleanup sandbox: %w", cerr)
+			log.G(ctx).Infof("nmx6004 %s cleanupErr is %v", id, cleanupErr)
 
 			// Strip last error as cleanup error to handle separately
 			if merr, ok := err.(interface{ Unwrap() []error }); ok {

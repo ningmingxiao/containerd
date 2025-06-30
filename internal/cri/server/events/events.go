@@ -147,6 +147,7 @@ func (em *EventMonitor) Start() <-chan error {
 					log.L.WithError(err).Errorf("Failed to convert event %+v", e)
 					break
 				}
+
 				if em.backOff.isInBackOff(id) {
 					log.L.Infof("Events for %q is in backoff, enqueue event %+v", id, evt)
 					em.backOff.enBackOff(id, evt)
