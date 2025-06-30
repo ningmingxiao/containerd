@@ -162,8 +162,10 @@ func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 		}
 	}
 
-	t.Run("CleanupAfterRestart", testCase(true))
-	t.Run("JustCleanup", testCase(false))
+	for i := 0; i < 10; i++ {
+		t.Run("CleanupAfterRestart", testCase(true))
+		t.Run("JustCleanup", testCase(false))
+	}
 }
 
 // TestRunPodSandboxWithShimStartAndTeardownCNIFailure should keep the sandbox
