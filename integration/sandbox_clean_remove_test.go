@@ -19,12 +19,14 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	runtimespec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +35,12 @@ import (
 )
 
 func TestSandboxRemoveWithoutIPLeakage(t *testing.T) {
+	for i := 0; i < 50; i++ {
+		testSandboxRemoveWithoutIPLeakage(t)
+	}
+}
+
+func testSandboxRemoveWithoutIPLeakage(t *testing.T) {
 	const hostLocalCheckpointDir = "/var/lib/cni"
 
 	t.Logf("Make sure host-local ipam is in use")
@@ -49,7 +57,8 @@ func TestSandboxRemoveWithoutIPLeakage(t *testing.T) {
 	}
 
 	t.Logf("Create a sandbox")
-	sbConfig := PodSandboxConfig("sandbox", "remove-without-ip-leakage")
+	name := fmt.Sprintf("remove-without-ip-leakage-%s", uuid.New().String())
+	sbConfig := PodSandboxConfig("sandbox", name)
 	sb, err := runtimeService.RunPodSandbox(sbConfig, *runtimeHandler)
 	require.NoError(t, err)
 	defer func() {
@@ -58,7 +67,7 @@ func TestSandboxRemoveWithoutIPLeakage(t *testing.T) {
 		runtimeService.RemovePodSandbox(sb)
 	}()
 
-	t.Logf("Get pod information")
+	t.Logf("Get pod information  %s time :%s", sb, time.Now().Format("2006-01-02 15:04:05"))
 	status, info, err := SandboxInfo(sb)
 	require.NoError(t, err)
 	ip := status.GetNetwork().GetIp()
@@ -84,19 +93,18 @@ func TestSandboxRemoveWithoutIPLeakage(t *testing.T) {
 		return found
 	}
 	require.True(t, checkIP(ip))
-
-	t.Logf("Kill sandbox container")
+	t.Logf("Kill sandbox container %s time :%s", sb, time.Now().Format("2006-01-02 15:04:05"))
 	require.NoError(t, KillPid(int(info.Pid)))
 
-	t.Logf("Unmount network namespace")
+	t.Logf("Unmount network namespace %s time :%s", sb, time.Now().Format("2006-01-02 15:04:05"))
 	require.NoError(t, unix.Unmount(netNS, unix.MNT_DETACH))
 
-	t.Logf("Network namespace should be closed")
+	t.Logf("Network namespace should be closed %s time :%s", sb, time.Now().Format("2006-01-02 15:04:05"))
 	_, info, err = SandboxInfo(sb)
 	require.NoError(t, err)
 	assert.True(t, info.NetNSClosed)
 
-	t.Logf("Remove network namespace")
+	t.Logf("Remove network namespace %s time :%s", sb, time.Now().Format("2006-01-02 15:04:05"))
 	require.NoError(t, os.RemoveAll(netNS))
 
 	t.Logf("Network namespace should still be closed")
@@ -104,11 +112,11 @@ func TestSandboxRemoveWithoutIPLeakage(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, info.NetNSClosed)
 
-	t.Logf("Sandbox state should be NOTREADY")
+	t.Logf("Sandbox state should be NOTREADY %s time :%s", sb, time.Now().Format("2006-01-02 15:04:05"))
 	assert.NoError(t, Eventually(func() (bool, error) {
 		status, err := runtimeService.PodSandboxStatus(sb)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("failed to get status for:%s err:%w", sb, err)
 		}
 		return status.GetState() == runtime.PodSandboxState_SANDBOX_NOTREADY, nil
 	}, time.Second, 30*time.Second), "sandbox state should become NOTREADY")

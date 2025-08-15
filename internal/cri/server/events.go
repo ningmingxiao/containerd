@@ -97,6 +97,7 @@ func (c *criService) startSandboxExitMonitor(ctx context.Context, id string, exi
 
 // handleSandboxExit handles sandbox exit event.
 func (c *criService) handleSandboxExit(ctx context.Context, sb sandboxstore.Sandbox, exitStatus uint32, exitTime time.Time) error {
+	log.L.Infof("handleSandboxExit %s nmx001", sb.ID)
 	if err := sb.Status.Update(func(status sandboxstore.Status) (sandboxstore.Status, error) {
 		status.State = sandboxstore.StateNotReady
 		status.Pid = 0
@@ -106,9 +107,10 @@ func (c *criService) handleSandboxExit(ctx context.Context, sb sandboxstore.Sand
 	}); err != nil {
 		return fmt.Errorf("failed to update sandbox state: %w", err)
 	}
-
+	log.L.Infof("handleSandboxExit %s nmx002", sb.ID)
 	// Using channel to propagate the information of sandbox stop
 	sb.Stop()
+	log.L.Infof("handleSandboxExit %s nmx003", sb.ID)
 	c.generateAndSendContainerEvent(ctx, sb.ID, sb.ID, runtime.ContainerEventType_CONTAINER_STOPPED_EVENT)
 	return nil
 }
@@ -167,6 +169,7 @@ func (c *criService) startContainerExitMonitor(ctx context.Context, id string, p
 // handleContainerExit handles TaskExit event for container.
 func (c *criService) handleContainerExit(ctx context.Context, e *eventtypes.TaskExit, cntr containerstore.Container, sandboxID string) error {
 	// Attach container IO so that `Delete` could cleanup the stream properly.
+	log.L.Infof("handleContainerExit for sandboxID %s 001", sandboxID)
 	task, err := cntr.Container.Task(ctx,
 		func(*containerdio.FIFOSet) (containerdio.IO, error) {
 			// We can't directly return cntr.IO here, because
@@ -181,6 +184,7 @@ func (c *criService) handleContainerExit(ctx context.Context, e *eventtypes.Task
 			return nil, nil
 		},
 	)
+	log.L.Infof("handleContainerExit for sandboxID %s 002", sandboxID)
 	if err != nil {
 		if !errdefs.IsNotFound(err) && !errdefs.IsUnavailable(err) {
 			return fmt.Errorf("failed to load task for container: %w", err)
@@ -194,6 +198,7 @@ func (c *criService) handleContainerExit(ctx context.Context, e *eventtypes.Task
 			// Move on to make sure container status is updated.
 		}
 	}
+	log.L.Infof("handleContainerExit for sandboxID %s 003", sandboxID)
 
 	// NOTE: Both sb.Container.Task and task.Delete interface always ensures
 	// that the status of target task. However, the interfaces return
@@ -238,7 +243,7 @@ func (c *criService) handleContainerExit(ctx context.Context, e *eventtypes.Task
 		}
 		log.L.Infof("Ensure that container %s in task-service has been cleanup successfully", cntr.Container.ID())
 	}
-
+	log.L.Infof("handleContainerExit for sandboxID %s 004", sandboxID)
 	err = cntr.Status.UpdateSync(func(status containerstore.Status) (containerstore.Status, error) {
 		if status.FinishedAt == 0 {
 			status.Pid = 0
@@ -257,8 +262,10 @@ func (c *criService) handleContainerExit(ctx context.Context, e *eventtypes.Task
 	if err != nil {
 		return fmt.Errorf("failed to update container state: %w", err)
 	}
+	log.L.Infof("handleContainerExit for sandboxID %s 005", sandboxID)
 	// Using channel to propagate the information of container stop
 	cntr.Stop()
+	log.L.Infof("handleContainerExit for sandboxID %s 006", sandboxID)
 	c.generateAndSendContainerEvent(ctx, cntr.ID, sandboxID, runtime.ContainerEventType_CONTAINER_STOPPED_EVENT)
 	return nil
 }
