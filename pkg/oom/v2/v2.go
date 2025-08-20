@@ -71,6 +71,7 @@ func (w *watcher) Run(ctx context.Context) {
 			}
 			lastOOM := lastOOMMap[i.id]
 			if i.ev.OOMKill > lastOOM {
+				log.G(ctx).Infof("publish OOM event 002 %s", i.id)
 				if err := w.publisher.Publish(ctx, runtime.TaskOOMEventTopic, &eventstypes.TaskOOM{
 					ContainerID: i.id,
 				}); err != nil {
