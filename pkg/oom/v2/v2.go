@@ -66,10 +66,13 @@ func (w *watcher) Run(ctx context.Context) {
 			return
 		case i := <-w.itemCh:
 			if i.err != nil {
+				log.G(ctx).Infof("nmx001 i.err %v", i.err)
 				delete(lastOOMMap, i.id)
 				continue
 			}
 			lastOOM := lastOOMMap[i.id]
+			log.G(ctx).Infof("nmx001 lastOOMMap %v", lastOOMMap)
+			log.G(ctx).Infof("nmx001 i.ev.OOMKill %d lastOOM %d", i.ev.OOMKill, lastOOM)
 			if i.ev.OOMKill > lastOOM {
 				if err := w.publisher.Publish(ctx, runtime.TaskOOMEventTopic, &eventstypes.TaskOOM{
 					ContainerID: i.id,
@@ -98,6 +101,7 @@ func (w *watcher) Add(id string, cgx interface{}) error {
 			i := item{id: id}
 			select {
 			case ev := <-eventCh:
+				log.L.Infof("nmx001 env is %v", ev)
 				i.ev = ev
 				w.itemCh <- i
 			case err := <-errCh:

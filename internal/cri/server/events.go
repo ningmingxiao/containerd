@@ -240,6 +240,7 @@ func (c *criService) handleContainerExit(ctx context.Context, e *eventtypes.Task
 	}
 
 	err = cntr.Status.UpdateSync(func(status containerstore.Status) (containerstore.Status, error) {
+		log.L.Infof("nmx001 handleContainerExit %s", cntr.ID)
 		if status.FinishedAt == 0 {
 			status.Pid = 0
 			status.FinishedAt = protobuf.FromTimestamp(e.ExitedAt).UnixNano()
@@ -319,6 +320,7 @@ func (ce *criEventHandler) HandleEvent(any interface{}) error {
 			return nil
 		}
 		err = cntr.Status.UpdateSync(func(status containerstore.Status) (containerstore.Status, error) {
+			log.L.Infof("nmx001 update oom cntr.Status.UpdateSync %s", cntr.ID)
 			status.Reason = oomExitReason
 			return status, nil
 		})
