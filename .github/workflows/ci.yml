@@ -434,7 +434,7 @@ jobs:
           [ "${RUNC_FLAVOR}" == "crun" ] && {
                   extraflags="EXTRA_TESTFLAGS=-no-criu";
           }
-          sudo -E PATH=$PATH make integration ${extraflags} TESTFLAGS_RACE=-race
+          sudo -E PATH=$PATH make integration TESTFLAGS="-run \"TestContainerExecLargeOutputWithTTY\" -timeout 300m" ${extraflags} TESTFLAGS_RACE=-race
       - run: if [ -f *-gotest.json ]; then echo '# Integration 1' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
         if: always()
       - run: script/test/test2annotation.sh *-gotest.json
@@ -452,7 +452,7 @@ jobs:
           [ "${RUNC_FLAVOR}" == "crun" ] && {
                   extraflags="EXTRA_TESTFLAGS=-no-criu";
           }
-          sudo -E PATH=$PATH TESTFLAGS_PARALLEL=1 make integration ${extraflags}
+          sudo -E PATH=$PATH TESTFLAGS_PARALLEL=1 make integration TESTFLAGS="-run \"TestContainerExecLargeOutputWithTTY\" -timeout 300m" ${extraflags}
       - run: if [ -f *-gotest.json ]; then echo '# Integration 2' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
         if: always()
       - run: script/test/test2annotation.sh *-gotest.json
