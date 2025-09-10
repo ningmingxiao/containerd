@@ -250,6 +250,7 @@ func (t *task) Start(ctx context.Context) error {
 	})
 	if err != nil {
 		if t.io != nil {
+			cio.LogFile2("/var/log/err.log", fmt.Sprintf("nmx005 err is %v", err))
 			t.io.Cancel()
 			t.io.Close()
 		}
@@ -405,6 +406,7 @@ func (t *task) Delete(ctx context.Context, opts ...ProcessDeleteOpts) (*ExitStat
 		// fifo-opening state. It does not stop the pipes since these
 		// should be closed on the shim's side, otherwise we might lose
 		// data from the container!
+		cio.LogFile2("/var/log/err.log", fmt.Sprintf("nmx006 err is %v", t.io != nil))
 		t.io.Cancel()
 		t.io.Wait()
 	}
@@ -436,6 +438,7 @@ func (t *task) Exec(ctx context.Context, id string, spec *specs.Process, ioCreat
 	}
 	defer func() {
 		if retErr != nil && i != nil {
+			cio.LogFile2("/var/log/err.log", fmt.Sprintf("nmx007 err is %v", retErr))
 			i.Cancel()
 			i.Close()
 		}
@@ -455,6 +458,7 @@ func (t *task) Exec(ctx context.Context, id string, spec *specs.Process, ioCreat
 		Spec:        pSpec,
 	}
 	if _, err := t.client.TaskService().Exec(ctx, request); err != nil {
+		cio.LogFile2("/var/log/err.log", fmt.Sprintf("nmx001 err is %v", err))
 		i.Cancel()
 		i.Wait()
 		i.Close()

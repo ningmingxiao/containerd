@@ -233,6 +233,7 @@ func (c *container) NewTask(ctx context.Context, ioCreate cio.Creator, opts ...N
 	}
 	defer func() {
 		if retErr != nil && i != nil {
+			cio.LogFile2("/var/log/err.log", fmt.Sprintf("nmx002 NewTask err is %v", retErr))
 			i.Cancel()
 			i.Close()
 		}

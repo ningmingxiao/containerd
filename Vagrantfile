@@ -261,7 +261,9 @@ EOF
         rm -rf /var/lib/containerd-test /run/containerd-test
         cd ${GOPATH}/src/github.com/containerd/containerd
         go test -v -count=1 -race ./core/metrics/cgroups
-        make integration EXTRA_TESTFLAGS="-timeout 15m -no-criu -test.v" TEST_RUNTIME=io.containerd.runc.v2 RUNC_FLAVOR=$RUNC_FLAVOR
+        make integration EXTRA_TESTFLAGS="-no-criu -test.v" TESTFLAGS="-run \"TestContainerExecLargeOutputWithTTY\" -timeout 300m" TEST_RUNTIME=io.containerd.runc.v2 RUNC_FLAVOR=$RUNC_FLAVOR
+        journalctl -u containerd > /tmp/containerd.log
+        cat /tmp/containerd.log
     SHELL
   end
 

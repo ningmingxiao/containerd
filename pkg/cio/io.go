@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	nlog "log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -32,7 +33,9 @@ import (
 
 var bufPool = sync.Pool{
 	New: func() interface{} {
-		buffer := make([]byte, 32<<10)
+		// setting to 4096 to align with PIPE_BUF
+		// http://man7.org/linux/man-pages/man7/pipe.7.html
+		buffer := make([]byte, 4096)
 		return &buffer
 	},
 }
@@ -288,6 +291,15 @@ func LogFile(path string) Creator {
 			},
 		}, nil
 	}
+}
+
+func LogFile2(path string, v ...interface{}) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	nlog.SetOutput(file)
+	nlog.Printf("%v \n", v)
 }
 
 // LogURIGenerator is the helper to generate log uri with specific scheme.
