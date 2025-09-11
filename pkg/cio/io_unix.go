@@ -29,6 +29,7 @@ import (
 	"syscall"
 
 	"github.com/containerd/fifo"
+	"github.com/containerd/log"
 )
 
 // NewFIFOSetInDir returns a new FIFOSet with paths in a temporary directory under root
@@ -66,7 +67,10 @@ func copyIO(fifos *FIFOSet, ioset *Streams) (*cio, error) {
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 
-			io.CopyBuffer(pipes.Stdin, ioset.Stdin, *p)
+			_, err := io.CopyBuffer(pipes.Stdin, ioset.Stdin, *p)
+			if err != nil {
+				log.G(ctx).WithError(err).Error("copy stdin")
+			}
 			pipes.Stdin.Close()
 		}()
 	}
@@ -78,8 +82,14 @@ func copyIO(fifos *FIFOSet, ioset *Streams) (*cio, error) {
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 
-			io.CopyBuffer(ioset.Stdout, pipes.Stdout, *p)
-			pipes.Stdout.Close()
+			_, err := io.CopyBuffer(ioset.Stdout, pipes.Stdout, *p)
+			if err != nil {
+				log.G(ctx).WithError(err).Error("copy stdout")
+			}
+			err2 := pipes.Stdout.Close()
+			if err2 != nil {
+				log.G(ctx).WithError(err2).Error("copy2 stdout")
+			}
 			wg.Done()
 		}()
 	}
@@ -90,7 +100,10 @@ func copyIO(fifos *FIFOSet, ioset *Streams) (*cio, error) {
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 
-			io.CopyBuffer(ioset.Stderr, pipes.Stderr, *p)
+			_, err := io.CopyBuffer(ioset.Stderr, pipes.Stderr, *p)
+			if err != nil {
+				log.G(ctx).WithError(err).Error("copy stderr")
+			}
 			pipes.Stderr.Close()
 			wg.Done()
 		}()

@@ -150,7 +150,6 @@ func copyPipes(ctx context.Context, rio runc.IO, stdin, stdout, stderr string, w
 						log.G(ctx).Warn("error copying stdout")
 					}
 					wg.Done()
-					wc.Close()
 					if rc != nil {
 						rc.Close()
 					}
@@ -186,10 +185,10 @@ func copyPipes(ctx context.Context, rio runc.IO, stdin, stdout, stderr string, w
 			fr io.Closer
 		)
 		if ok {
-			if fw, err = fifo.OpenFifo(ctx, i.name, syscall.O_WRONLY, 0); err != nil {
+			if fw, err = fifo.OpenFifo(context.Background(), i.name, syscall.O_WRONLY, 0); err != nil {
 				return fmt.Errorf("containerd-shim: opening w/o fifo %q failed: %w", i.name, err)
 			}
-			if fr, err = fifo.OpenFifo(ctx, i.name, syscall.O_RDONLY, 0); err != nil {
+			if fr, err = fifo.OpenFifo(context.Background(), i.name, syscall.O_RDONLY, 0); err != nil {
 				return fmt.Errorf("containerd-shim: opening r/o fifo %q failed: %w", i.name, err)
 			}
 		} else {

@@ -100,6 +100,12 @@ func (e *execProcess) setExited(status int) {
 	e.status = status
 	e.exited = time.Now()
 	e.parent.Platform.ShutdownConsole(context.Background(), e.console)
+	if e.io != nil {
+		for _, c := range e.closers {
+			c.Close()
+		}
+		e.io.Close()
+	}
 	close(e.waitBlock)
 }
 
@@ -112,12 +118,6 @@ func (e *execProcess) Delete(ctx context.Context) error {
 
 func (e *execProcess) delete(ctx context.Context) error {
 	waitTimeout(ctx, &e.wg, 2*time.Second)
-	if e.io != nil {
-		for _, c := range e.closers {
-			c.Close()
-		}
-		e.io.Close()
-	}
 	pidfile := filepath.Join(e.path, fmt.Sprintf("%s.pid", e.id))
 	// silently ignore error
 	os.Remove(pidfile)

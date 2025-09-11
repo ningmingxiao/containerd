@@ -39,8 +39,10 @@ import (
 	"github.com/containerd/log/logtest"
 	"github.com/containerd/platforms"
 	"github.com/containerd/typeurl/v2"
+	"github.com/google/uuid"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 
 	. "github.com/containerd/containerd/v2/client"
 	"github.com/containerd/containerd/v2/core/containers"
@@ -1944,55 +1946,68 @@ func TestContainerExecLargeOutputWithTTY(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i := 0; i < 100; i++ {
-		spec, err := container.Spec(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+	spec, err := container.Spec(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	processSpec := spec.Process
+	withExecArgs(processSpec, "sh", "-c", `seq -s " " 1000000`)
 
-		// start an exec process without running the original container process info
-		processSpec := spec.Process
-		withExecArgs(processSpec, "sh", "-c", `seq -s " " 1000000`)
+	eg, ctx2 := errgroup.WithContext(ctx)
+	eg.SetLimit(20)
+	for i := 0; i < 5000; i++ {
+		eg.Go(func() (retError error) {
+			t.Logf("times is %d \n", i)
+			t1 := time.Now()
+			defer func() {
+				if retError != nil {
+					t.Logf("times used %v \n", time.Since(t1))
+				}
+			}()
+			stdout := bytes.NewBuffer(make([]byte, 4096))
+			execID := t.Name() + "_exec" + uuid.New().String()
+			process, err := task.Exec(ctx2, execID, processSpec, cio.NewCreator(withStdout(stdout), withProcessTTY()))
+			if err != nil {
+				return err
+			}
+			processStatusC, err := process.Wait(ctx2)
+			if err != nil {
+				return err
+			}
 
-		stdout := bytes.NewBuffer(nil)
+			if err := process.Start(ctx2); err != nil {
+				return err
+			}
 
-		execID := t.Name() + "_exec"
-		process, err := task.Exec(ctx, execID, processSpec, cio.NewCreator(withStdout(stdout), withProcessTTY()))
-		if err != nil {
-			t.Fatal(err)
-		}
-		processStatusC, err := process.Wait(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
+			// wait for the exec to return
+			status := <-processStatusC
+			code, _, err := status.Result()
+			if err != nil {
+				return err
+			}
 
-		if err := process.Start(ctx); err != nil {
-			t.Fatal(err)
-		}
+			if code != 0 {
+				return fmt.Errorf("expected exec exit code 0 but received %d", code)
+			}
+			if _, err := process.Delete(ctx2); err != nil {
+				return err
+			}
 
-		// wait for the exec to return
-		status := <-processStatusC
-		code, _, err := status.Result()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if code != 0 {
-			t.Errorf("expected exec exit code 0 but received %d", code)
-		}
-		if _, err := process.Delete(ctx); err != nil {
-			t.Fatal(err)
-		}
-
-		const expectedSuffix = "999999 1000000"
-		stdoutString := stdout.String()
-		if len(stdoutString) == 0 {
-			t.Fatal(fmt.Errorf("len (stdoutString) is 0"))
-		}
-		if !strings.Contains(stdoutString, expectedSuffix) {
-			t.Fatalf("process output does not end with %q at iteration %d, here are the last 20 characters of the output:\n\n %q", expectedSuffix, i, stdoutString[len(stdoutString)-20:])
-		}
-
+			const expectedSuffix = "999999 1000000"
+			stdoutString := stdout.String()
+			if len(stdoutString) == 0 {
+				return fmt.Errorf("len (stdoutString) is 0")
+			}
+			if !strings.Contains(stdoutString, expectedSuffix) {
+				return fmt.Errorf("process output does not end with %q at iteration %d, here are the last 20 characters of the output:\n\n %q", expectedSuffix, i, stdoutString[len(stdoutString)-20:])
+			}
+			t.Logf("times is ok %d \n", i)
+			return nil
+		})
+	}
+	err = eg.Wait()
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
 
 	if err := task.Kill(ctx, syscall.SIGKILL); err != nil {
