@@ -63,6 +63,7 @@ if [[ "$test_exit_code" -ne 0 ]]; then
     echo ::endgroup::
   else
     cat "$REPORT_DIR/containerd.log"
+    cat /tmp/containerd*.log
   fi
 fi
 
