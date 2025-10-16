@@ -27,9 +27,11 @@ import (
 	"github.com/containerd/errdefs"
 	"github.com/containerd/errdefs/pkg/errgrpc"
 
+	"github.com/containerd/containerd/v2/internal/kmutex"
 	"github.com/containerd/containerd/v2/pkg/cio"
 	"github.com/containerd/containerd/v2/pkg/protobuf"
 	"github.com/containerd/containerd/v2/pkg/tracing"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Process represents a system process
@@ -107,6 +109,10 @@ type process struct {
 	task *task
 	pid  uint32
 	io   cio.IO
+
+	exitStatus uint32
+	exitedAt   *timestamppb.Timestamp
+	locker     kmutex.KeyedLocker
 }
 
 func (p *process) ID() string {
@@ -230,21 +236,28 @@ func (p *process) Resize(ctx context.Context, w, h uint32) error {
 }
 
 func (p *process) Delete(ctx context.Context, opts ...ProcessDeleteOpts) (*ExitStatus, error) {
+	if p.isDeleted(p.id) {
+		return &ExitStatus{code: p.exitStatus, exitedAt: protobuf.FromTimestamp(p.exitedAt)}, nil
+	}
+	p.locker.Lock(context.Background(), p.id)
 	ctx, span := tracing.StartSpan(ctx, "process.Delete",
 		tracing.WithAttribute("process.id", p.ID()),
 	)
 	defer span.End()
 	for _, o := range opts {
 		if err := o(ctx, p); err != nil {
+			p.locker.Unlock(p.id)
 			return nil, err
 		}
 	}
 	status, err := p.Status(ctx)
 	if err != nil {
+		p.locker.Unlock(p.id)
 		return nil, err
 	}
 	switch status.Status {
 	case Running, Paused, Pausing:
+		p.locker.Unlock(p.id)
 		return nil, fmt.Errorf("current process state: %s, process must be stopped before deletion: %w", status.Status, errdefs.ErrFailedPrecondition)
 	}
 	r, err := p.task.client.TaskService().DeleteProcess(ctx, &tasks.DeleteProcessRequest{
@@ -252,14 +265,24 @@ func (p *process) Delete(ctx context.Context, opts ...ProcessDeleteOpts) (*ExitS
 		ExecID:      p.id,
 	})
 	if err != nil {
+		p.locker.Unlock(p.id)
 		return nil, errgrpc.ToNative(err)
 	}
+	p.exitStatus = r.ExitStatus
+	p.exitedAt = r.ExitedAt
 	if p.io != nil {
 		p.io.Cancel()
 		p.io.Wait()
 		p.io.Close()
 	}
+	p.locker.Unlock(p.id)
 	return &ExitStatus{code: r.ExitStatus, exitedAt: protobuf.FromTimestamp(r.ExitedAt)}, nil
+}
+
+func (p *process) isDeleted(id string) bool {
+	p.locker.Lock(context.Background(), p.id)
+	defer p.locker.Unlock(id)
+	return p.exitedAt != nil
 }
 
 func (p *process) Status(ctx context.Context) (Status, error) {

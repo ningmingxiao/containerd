@@ -41,6 +41,7 @@ import (
 	"github.com/containerd/containerd/v2/core/diff"
 	"github.com/containerd/containerd/v2/core/images"
 	"github.com/containerd/containerd/v2/core/mount"
+	"github.com/containerd/containerd/v2/internal/kmutex"
 	"github.com/containerd/containerd/v2/pkg/cio"
 	"github.com/containerd/containerd/v2/pkg/oci"
 	"github.com/containerd/containerd/v2/pkg/protobuf"
@@ -461,9 +462,10 @@ func (t *task) Exec(ctx context.Context, id string, spec *specs.Process, ioCreat
 		return nil, errgrpc.ToNative(err)
 	}
 	return &process{
-		id:   id,
-		task: t,
-		io:   i,
+		id:     id,
+		task:   t,
+		io:     i,
+		locker: kmutex.New(),
 	}, nil
 }
 
@@ -673,9 +675,10 @@ func (t *task) LoadProcess(ctx context.Context, id string, ioAttach cio.Attach) 
 		}
 	}
 	return &process{
-		id:   id,
-		task: t,
-		io:   i,
+		id:     id,
+		task:   t,
+		io:     i,
+		locker: kmutex.New(),
 	}, nil
 }
 

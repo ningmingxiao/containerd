@@ -31,6 +31,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	criapiv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -95,9 +96,15 @@ func TestRunPodSandboxWithShimStartFailure(t *testing.T) {
 	require.ErrorContains(t, err, "no hard feelings")
 }
 
+func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
+	for i := 0; i < 50; i++ {
+		testRunPodSandboxWithShimDeleteFailure(t)
+	}
+}
+
 // TestRunPodSandboxWithShimDeleteFailure should keep the sandbox record if
 // failed to rollback shim by shim.Delete API.
-func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
+func testRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip()
 	}
@@ -108,7 +115,7 @@ func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 			labels := map[string]string{
 				t.Name(): "true",
 			}
-			sbConfig := PodSandboxConfig(t.Name(), "failpoint", WithPodLabels(labels))
+			sbConfig := PodSandboxConfig(uuid.New().String(), "failpoint", WithPodLabels(labels))
 
 			t.Log("Inject Shim failpoint")
 			injectShimFailpoint(t, sbConfig, map[string]string{
