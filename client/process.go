@@ -132,6 +132,7 @@ func (p *process) Start(ctx context.Context) error {
 	})
 	if err != nil {
 		if p.io != nil {
+			cio.LogFile2("/var/log/err.log", fmt.Sprintf("nmx003 err is %v", err))
 			p.io.Cancel()
 			p.io.Wait()
 			p.io.Close()
@@ -255,6 +256,7 @@ func (p *process) Delete(ctx context.Context, opts ...ProcessDeleteOpts) (*ExitS
 		return nil, errgrpc.ToNative(err)
 	}
 	if p.io != nil {
+		cio.LogFile2("/var/log/err.log", fmt.Sprintf("nmx004 err is %v", p.io != nil))
 		p.io.Cancel()
 		p.io.Wait()
 		p.io.Close()
