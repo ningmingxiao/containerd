@@ -240,7 +240,8 @@ func withNewSnapshot(id string, i Image, readonly bool, opts ...snapshots.Opt) N
 		if err != nil {
 			return err
 		}
-
+		//diffid [0] ="sha256:e17133b79956ad6f69ae7f775badd1c11bad2fc64f0529cab86
+		//"sha256:e17133b79956ad6f69ae7f775badd1c11bad2fc64f0529cab863b9d12fbaa5c4"
 		parent := identity.ChainID(diffIDs).String()
 		c.Snapshotter, err = client.resolveSnapshotterName(ctx, c.Snapshotter)
 		if err != nil {
