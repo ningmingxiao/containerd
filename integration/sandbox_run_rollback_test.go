@@ -31,6 +31,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	criapiv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -95,20 +96,27 @@ func TestRunPodSandboxWithShimStartFailure(t *testing.T) {
 	require.ErrorContains(t, err, "no hard feelings")
 }
 
+func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
+	for i := 0; i < 50; i++ {
+		testRunPodSandboxWithShimDeleteFailure(t)
+	}
+}
+
 // TestRunPodSandboxWithShimDeleteFailure should keep the sandbox record if
 // failed to rollback shim by shim.Delete API.
-func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
+func testRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip()
 	}
 
 	testCase := func(restart bool) func(*testing.T) {
 		return func(t *testing.T) {
-			t.Log("Init PodSandboxConfig with specific label")
+			name := uuid.New().String()
+			t.Logf("Init PodSandboxConfig with specific label %s", name)
 			labels := map[string]string{
-				t.Name(): "true",
+				name: "true",
 			}
-			sbConfig := PodSandboxConfig(t.Name(), "failpoint", WithPodLabels(labels))
+			sbConfig := PodSandboxConfig(name, "failpoint", WithPodLabels(labels))
 
 			t.Log("Inject Shim failpoint")
 			injectShimFailpoint(t, sbConfig, map[string]string{
@@ -136,6 +144,9 @@ func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 			t.Log("Check PodSandboxStatus")
 			sbStatus, err := runtimeService.PodSandboxStatus(sb.Id)
 			require.NoError(t, err)
+			if err != nil {
+				t.Logf("nmx002 Cleanup leaky sandbox err is %s", err.Error())
+			}
 			require.Equal(t, criapiv1.PodSandboxState_SANDBOX_NOTREADY, sbStatus.State)
 			require.Greater(t, len(sbStatus.Network.Ip), 0)
 
@@ -154,10 +165,14 @@ func TestRunPodSandboxWithShimDeleteFailure(t *testing.T) {
 				require.NoError(t, err)
 				t.Log(sbStatus.Network)
 				require.Equal(t, criapiv1.PodSandboxState_SANDBOX_NOTREADY, sbStatus.State)
+				t.Logf("Init PodSandboxConfig with specific label %s end", name)
 			}
 
 			t.Log("Cleanup leaky sandbox")
 			err = runtimeService.RemovePodSandbox(sb.Id)
+			if err != nil {
+				t.Logf("nmx001 Cleanup leaky sandbox err is %s", err.Error())
+			}
 			require.NoError(t, err)
 		}
 	}
