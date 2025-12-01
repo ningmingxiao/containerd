@@ -30,7 +30,6 @@ import (
 	"github.com/containerd/containerd/v2/core/containers"
 	"github.com/containerd/containerd/v2/core/mount"
 	"github.com/containerd/containerd/v2/core/snapshots"
-	"github.com/containerd/errdefs"
 	"github.com/containerd/log"
 )
 
@@ -39,15 +38,17 @@ import (
 func WithNewSnapshot(id string, i containerd.Image, opts ...snapshots.Opt) containerd.NewContainerOpts {
 	f := containerd.WithNewSnapshot(id, i, opts...)
 	return func(ctx context.Context, client *containerd.Client, c *containers.Container) error {
-		if err := f(ctx, client, c); err != nil {
-			if !errdefs.IsNotFound(err) {
-				return err
-			}
+		err := f(ctx, client, c)
+		if err != nil {
+			return err
+			// if !errdefs.IsNotFound(err) {
+			// 	return err
+			// }
 
-			if err := i.Unpack(ctx, c.Snapshotter); err != nil {
-				return fmt.Errorf("error unpacking image: %w", err)
-			}
-			return f(ctx, client, c)
+			// if err := i.Unpack(ctx, c.Snapshotter); err != nil {
+			// 	return fmt.Errorf("error unpacking image: %w", err)
+			// }
+			// return f(ctx, client, c)
 		}
 		return nil
 	}
