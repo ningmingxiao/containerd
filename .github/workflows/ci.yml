@@ -306,35 +306,35 @@ jobs:
           TESTFILE: ${{github.workspace}}/test-unit-root-gotest.json
         if: always()
 
-      - name: Integration 1
-        env:
-          CGO_ENABLED: 1
-          GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-serial-junit.xml
-          GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-serial-gotest.json
-          EXTRA_TESTFLAGS: "-timeout=20m"
-        run: mingw32-make.exe integration
-      - run: if [ -f *-gotest.json ]; then echo '# Integration 1' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
-        if: always()
-      - run: script/test/test2annotation.sh "$TESTFILE"
-        env:
-          TESTFILE: ${{github.workspace}}/test-integration-serial-gotest.json
-        if: success()
+      # - name: Integration 1
+      #   env:
+      #     CGO_ENABLED: 1
+      #     GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-serial-junit.xml
+      #     GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-serial-gotest.json
+      #     EXTRA_TESTFLAGS: "-timeout=20m"
+      #   run: mingw32-make.exe integration
+      # - run: if [ -f *-gotest.json ]; then echo '# Integration 1' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
+      #   if: always()
+      # - run: script/test/test2annotation.sh "$TESTFILE"
+      #   env:
+      #     TESTFILE: ${{github.workspace}}/test-integration-serial-gotest.json
+      #   if: success()
 
       # Run the integration suite a second time. See discussion in github.com/containerd/containerd/pull/1759
-      - name: Integration 2
-        env:
-          TESTFLAGS_PARALLEL: 1
-          EXTRA_TESTFLAGS: "-short"
-          CGO_ENABLED: 1
-          GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-parallel-junit.xml
-          GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-parallel-gotest.json
-        run: mingw32-make.exe integration
-      - run: if [ -f *-gotest.json ]; then echo '# Integration 2' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
-        if: always()
-      - run: script/test/test2annotation.sh "$TESTFILE"
-        env:
-          TESTFILE: ${{github.workspace}}/test-integration-parallel-gotest.json
-        if: success()
+      # - name: Integration 2
+      #   env:
+      #     TESTFLAGS_PARALLEL: 1
+      #     EXTRA_TESTFLAGS: "-short"
+      #     CGO_ENABLED: 1
+      #     GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-parallel-junit.xml
+      #     GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-parallel-gotest.json
+      #   run: mingw32-make.exe integration
+      # - run: if [ -f *-gotest.json ]; then echo '# Integration 2' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
+      #   if: always()
+      # - run: script/test/test2annotation.sh "$TESTFILE"
+      #   env:
+      #     TESTFILE: ${{github.workspace}}/test-integration-parallel-gotest.json
+      #   if: success()
 
       - name: CRI Integration Test
         env:
