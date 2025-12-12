@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	nlog "log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -479,6 +480,15 @@ func (c *Container) HasPid(pid int) bool {
 	return false
 }
 
+func LogFile(path string, v ...interface{}) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	nlog.SetOutput(file)
+	nlog.Printf("%v \n", v)
+}
+
 func (c *Container) OOMWatch(ctx context.Context, eventf func(string)) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -495,9 +505,20 @@ func (c *Container) OOMWatch(ctx context.Context, eventf func(string)) error {
 		for {
 			select {
 			case ev := <-eventCh:
+				// data1 oom ev.OOMKill 0 oomKills 0 oomKills 0 c.id 28d86647541d813ae83f3bf24bbfd46f05725e413f3340bc7ac936e29b392a0f]
+				data1 := fmt.Sprintf("data1 oom ev.OOMKill %d oomKills %d oomKills %d c.id %s", ev.OOMKill, oomKills, oomKills, c.ID)
+				LogFile("/tmp/shim.log", data1)
+
+				data3 := fmt.Sprintf("data3 is %#v c.id %s", ev, c.ID)
+				LogFile("/tmp/shim.log", data3)
 				if ev.OOMKill > oomKills {
 					oomKills = ev.OOMKill
-					eventf(c.ID)
+					// [data oom ev.OOMKill 1 oomKills 1  c.id ad32f0f2f128373895c5f8f7b3d8e6d918af7d6e8285a3d8ae96ba19f32c4f90]
+					data := fmt.Sprintf("data oom ev.OOMKill %d oomKills %d  c.id %s", ev.OOMKill, oomKills, c.ID)
+					LogFile("/tmp/shim.log", data)
+					go func() {
+						eventf(c.ID)
+					}()
 				}
 			case err := <-errCh:
 				// channel is closed when cgroup gets deleted

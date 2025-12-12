@@ -69,17 +69,20 @@ func (w *watcher) Run(ctx context.Context) {
 				delete(lastOOMMap, i.id)
 				continue
 			}
-			lastOOM := lastOOMMap[i.id]
-			if i.ev.OOMKill > lastOOM {
-				if err := w.publisher.Publish(ctx, runtime.TaskOOMEventTopic, &eventstypes.TaskOOM{
-					ContainerID: i.id,
-				}); err != nil {
-					log.G(ctx).WithError(err).Error("publish OOM event")
+			go func() {
+				lastOOM := lastOOMMap[i.id]
+				if i.ev.OOMKill > lastOOM {
+					log.G(ctx).Infof("publish oom event %s i.ev.OOMKill is %d", i.id, i.ev.OOMKill)
+					if err := w.publisher.Publish(ctx, runtime.TaskOOMEventTopic, &eventstypes.TaskOOM{
+						ContainerID: i.id,
+					}); err != nil {
+						log.G(ctx).WithError(err).Error("publish OOM event")
+					}
 				}
-			}
-			if i.ev.OOMKill > 0 {
-				lastOOMMap[i.id] = i.ev.OOMKill
-			}
+				if i.ev.OOMKill > 0 {
+					lastOOMMap[i.id] = i.ev.OOMKill
+				}
+			}()
 		}
 	}
 }

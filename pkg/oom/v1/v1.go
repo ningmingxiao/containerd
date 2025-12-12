@@ -21,6 +21,8 @@ package v1
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/containerd/cgroups/v3/cgroup1"
@@ -73,14 +75,31 @@ func (e *epoller) Run(ctx context.Context) {
 		err    error
 		events [128]unix.EpollEvent
 	)
+
+	pid := os.Getpid()
+	cmdlinePath := fmt.Sprintf("/proc/%d/cmdline", pid)
 	for {
 		err = sys.IgnoringEINTR(func() error {
 			select {
 			case <-ctx.Done():
 				e.Close()
+				cmdlineData, err := os.ReadFile(cmdlinePath)
+				if err == nil {
+					args := strings.Split(string(cmdlineData), "\x00")
+					log.G(ctx).Infof("nmx001 ctx.Done() args is %v", args)
+				}
+				log.G(ctx).Info("nmx001 ctx.Done()")
 				return ctx.Err()
 			default:
 				n, err = unix.EpollWait(e.fd, events[:], -1)
+				cmdlineData, err := os.ReadFile(cmdlinePath)
+				if err == nil {
+					args := strings.Split(string(cmdlineData), "\x00")
+					log.G(ctx).Infof("nmx002 unix.EpollWait args is %v", args)
+				}
+				if err != nil {
+					log.G(ctx).Infof("nmx002 unix.EpollWait %s", err.Error())
+				}
 				return err
 			}
 		})
@@ -136,6 +155,7 @@ func (e *epoller) process(ctx context.Context, fd uintptr) {
 		unix.Close(int(fd))
 		return
 	}
+	log.G(ctx).Infof("publish oom event %s lhy001", i.id)
 	if err := e.publisher.Publish(ctx, runtime.TaskOOMEventTopic, &eventstypes.TaskOOM{
 		ContainerID: i.id,
 	}); err != nil {
