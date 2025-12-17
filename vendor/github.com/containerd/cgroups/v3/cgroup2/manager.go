@@ -796,7 +796,7 @@ func (c *Manager) memoryEventNonBlockFD() (_ *os.File, retErr error) {
 }
 
 func (c *Manager) EventChan() (<-chan Event, <-chan error) {
-	ec := make(chan Event, 1)
+	ec := make(chan Event, 1024)
 	errCh := make(chan error, 1)
 
 	fd, err := c.memoryEventNonBlockFD()

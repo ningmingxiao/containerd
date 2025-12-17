@@ -887,6 +887,8 @@ func (c *criService) buildLinuxSpec(
 		specOpts = append(specOpts, customopts.WithAnnotation(pKey, pValue))
 	}
 
+	specOpts = append(specOpts, customopts.WithAnnotation("org.systemd.property.TimeoutStopUSec", "uint64 3000000"))
+
 	// Default target PID namespace is the sandbox PID.
 	targetPid := sandboxPid
 	// If the container targets another container's PID namespace,
