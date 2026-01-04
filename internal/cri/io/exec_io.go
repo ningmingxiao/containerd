@@ -22,6 +22,7 @@ import (
 
 	"github.com/containerd/log"
 
+	"github.com/containerd/containerd/v2/client"
 	"github.com/containerd/containerd/v2/pkg/cio"
 	cioutil "github.com/containerd/containerd/v2/pkg/ioutil"
 )
@@ -89,12 +90,11 @@ func (e *ExecIO) Config() cio.Config {
 }
 
 // Attach attaches exec stdio. The logic is similar with container io attach.
-func (e *ExecIO) Attach(opts AttachOptions) <-chan struct{} {
+func (e *ExecIO) Attach(opts AttachOptions, exitCh <-chan client.ExitStatus) <-chan struct{} {
 	var wg sync.WaitGroup
 	var stdinStreamRC io.ReadCloser
 	if e.stdin != nil && opts.Stdin != nil {
 		stdinStreamRC = cioutil.NewWrapReadCloser(opts.Stdin)
-		wg.Add(1)
 		go func() {
 			if _, err := io.Copy(e.stdin, stdinStreamRC); err != nil {
 				log.L.WithError(err).Errorf("Failed to redirect stdin for container exec %q", e.id)
@@ -105,15 +105,12 @@ func (e *ExecIO) Attach(opts AttachOptions) <-chan struct{} {
 				if err := opts.CloseStdin(); err != nil {
 					log.L.WithError(err).Errorf("Failed to close stdin for container exec %q", e.id)
 				}
-			} else {
-				if e.stdout != nil {
-					e.stdout.Close()
-				}
-				if e.stderr != nil {
-					e.stderr.Close()
-				}
 			}
-			wg.Done()
+		}()
+		go func() {
+			// close stdinStreamRC after exec process exited.
+			<-exitCh
+			stdinStreamRC.Close()
 		}()
 	}
 
@@ -123,9 +120,6 @@ func (e *ExecIO) Attach(opts AttachOptions) <-chan struct{} {
 		}
 		out.Close()
 		stream.Close()
-		if stdinStreamRC != nil {
-			stdinStreamRC.Close()
-		}
 		e.closer.wg.Done()
 		wg.Done()
 		log.L.Debugf("Finish piping %q of container exec %q", t, e.id)
@@ -136,6 +130,10 @@ func (e *ExecIO) Attach(opts AttachOptions) <-chan struct{} {
 		// Closer should wait for this routine to be over.
 		e.closer.wg.Add(1)
 		go attachOutput(Stdout, opts.Stdout, e.stdout)
+	} else {
+		if e.stdout != nil {
+			e.stdout.Close()
+		}
 	}
 
 	if !opts.Tty && opts.Stderr != nil {
@@ -143,6 +141,10 @@ func (e *ExecIO) Attach(opts AttachOptions) <-chan struct{} {
 		// Closer should wait for this routine to be over.
 		e.closer.wg.Add(1)
 		go attachOutput(Stderr, opts.Stderr, e.stderr)
+	} else {
+		if e.stderr != nil {
+			e.stderr.Close()
+		}
 	}
 
 	done := make(chan struct{})
