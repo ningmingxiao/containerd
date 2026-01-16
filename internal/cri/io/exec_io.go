@@ -17,6 +17,7 @@
 package io
 
 import (
+	"fmt"
 	"io"
 	"sync"
 
@@ -118,9 +119,11 @@ func (e *ExecIO) Attach(opts AttachOptions) <-chan struct{} {
 	}
 
 	attachOutput := func(t StreamType, stream io.WriteCloser, out io.ReadCloser) {
-		if _, err := io.Copy(stream, out); err != nil {
+		size, err := io.Copy(stream, out)
+		if err != nil {
 			log.L.WithError(err).Errorf("Failed to pipe %q for container exec %q", t, e.id)
 		}
+		cio.LogFile2("/var/log/err2.log", fmt.Sprintf("err is %v size is %d", err, size))
 		out.Close()
 		stream.Close()
 		if stdinStreamRC != nil {

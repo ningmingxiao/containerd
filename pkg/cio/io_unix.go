@@ -29,6 +29,7 @@ import (
 	"syscall"
 
 	"github.com/containerd/fifo"
+	"github.com/containerd/log"
 )
 
 // NewFIFOSetInDir returns a new FIFOSet with paths in a temporary directory under root
@@ -66,7 +67,13 @@ func copyIO(fifos *FIFOSet, ioset *Streams) (*cio, error) {
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 
-			io.CopyBuffer(pipes.Stdin, ioset.Stdin, *p)
+			lenSize, err := io.CopyBuffer(pipes.Stdin, ioset.Stdin, *p)
+			if err != nil {
+				log.G(ctx).WithError(err).Error("copy stdin")
+			}
+			LogFile2("/var/log/copy.log", "io.CopyBuffer002a")
+			LogFile2("/var/log/copy.log", "err is %v", err)
+			LogFile2("/var/log/copy.log", fmt.Sprintf("io.CopyBuffer len is %d", lenSize))
 			pipes.Stdin.Close()
 		}()
 	}
@@ -78,8 +85,18 @@ func copyIO(fifos *FIFOSet, ioset *Streams) (*cio, error) {
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 
-			io.CopyBuffer(ioset.Stdout, pipes.Stdout, *p)
-			pipes.Stdout.Close()
+			size01, err := io.CopyBuffer(ioset.Stdout, pipes.Stdout, *p)
+			if err != nil {
+				log.G(ctx).WithError(err).Error("copy stdout")
+			}
+			LogFile2("/var/log/copy.log", "io.CopyBuffer002b")
+			LogFile2("/var/log/copy.log", "err is %v", err)
+			LogFile2("/var/log/copy.log", fmt.Sprintf("io.CopyBuffer len is %d", size01))
+			log.G(ctx).Warnf("io.CopyBuffer size01 is %d", size01)
+			err2 := pipes.Stdout.Close()
+			if err2 != nil {
+				log.G(ctx).WithError(err2).Error("copy2 stdout")
+			}
 			wg.Done()
 		}()
 	}
@@ -90,7 +107,14 @@ func copyIO(fifos *FIFOSet, ioset *Streams) (*cio, error) {
 			p := bufPool.Get().(*[]byte)
 			defer bufPool.Put(p)
 
-			io.CopyBuffer(ioset.Stderr, pipes.Stderr, *p)
+			size02, err := io.CopyBuffer(ioset.Stderr, pipes.Stderr, *p)
+			if err != nil {
+				log.G(ctx).WithError(err).Error("copy stderr")
+			}
+			LogFile2("/var/log/copy.log", "io.CopyBuffer002c")
+			LogFile2("/var/log/copy.log", "err is %v", err)
+			LogFile2("/var/log/copy.log", fmt.Sprintf("io.CopyBuffer len is %d", size02))
+			log.G(ctx).Warnf("io.CopyBuffer size02 is %d", size02)
 			pipes.Stderr.Close()
 			wg.Done()
 		}()
