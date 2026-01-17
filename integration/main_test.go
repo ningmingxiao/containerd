@@ -315,6 +315,12 @@ func WithTestAnnotations() ContainerOpts {
 	}
 }
 
+func WithAnnotations(annotations map[string]string) ContainerOpts {
+	return func(c *runtime.ContainerConfig) {
+		c.Annotations = annotations
+	}
+}
+
 // Add container resource limits.
 func WithResources(r *runtime.LinuxContainerResources) ContainerOpts {
 	return func(c *runtime.ContainerConfig) {
