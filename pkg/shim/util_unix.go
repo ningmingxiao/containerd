@@ -89,6 +89,11 @@ func SocketAddress(ctx context.Context, socketPath, id string, debug bool) (stri
 	return fmt.Sprintf("unix://%s/%x", filepath.Join(socketRoot, "s"), d), nil
 }
 
+func stack() string {
+	var buf [2 << 10]byte
+	return string(buf[:runtime.Stack(buf[:], true)])
+}
+
 // AnonDialer returns a dialer for a socket
 func AnonDialer(address string, timeout time.Duration) (net.Conn, error) {
 	proto, addr, ok := strings.Cut(address, "://")
@@ -104,7 +109,7 @@ func AnonDialer(address string, timeout time.Duration) (net.Conn, error) {
 	case protoUnix:
 		return net.DialTimeout("unix", socket(address).path(), timeout)
 	default:
-		return nil, fmt.Errorf("unsupported protocol: %s", proto)
+		return nil, fmt.Errorf("unsupported protocol: %s address is %s stack %s", proto, address, stack())
 	}
 }
 
