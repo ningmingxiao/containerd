@@ -139,7 +139,7 @@ func (w *writer) Commit(ctx context.Context, size int64, expected digest.Digest,
 		return err
 	}
 
-	if err := syncDir(filepath.Dir(target)); err != nil {
+	if err := SyncDir(filepath.Dir(target)); err != nil {
 		return err
 	}
 	// Enable content blob integrity verification if supported
