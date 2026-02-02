@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"runtime"
 	"strconv"
 	"strings"
@@ -333,6 +334,23 @@ func (c *Client) Containers(ctx context.Context, filters ...string) ([]Container
 		out[i] = containerFromRecord(c, container)
 	}
 	return out, nil
+}
+
+func (c *Client) ContainersIter(ctx context.Context, filters ...string) (iter.Seq2[Container, error], error) {
+	if r, ok := c.ContainerService().(*remoteContainers); ok {
+		return func(yield func(Container, error) bool) {
+			for con, err := range r.listContainersSeq(ctx, filters...) {
+				if err != nil {
+					yield(nil, err)
+					return
+				}
+				if !yield(containerFromRecord(c, con), nil) {
+					return
+				}
+			}
+		}, nil
+	}
+	return nil, fmt.Errorf("c.ContainerService() is not a *remoteContainers")
 }
 
 // NewContainer will create a new container with the provided id.

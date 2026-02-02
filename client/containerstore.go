@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"iter"
 
 	containersapi "github.com/containerd/containerd/api/services/containers/v1"
 	"github.com/containerd/errdefs/pkg/errgrpc"
@@ -105,6 +106,43 @@ func (r *remoteContainers) stream(ctx context.Context, filters ...string) ([]con
 			return containers, ctx.Err()
 		default:
 			containers = append(containers, containerFromProto(c.Container))
+		}
+	}
+}
+
+func (r *remoteContainers) listContainersSeq(ctx context.Context, filters ...string) iter.Seq2[containers.Container, error] {
+	return func(yield func(containers.Container, error) bool) {
+		session, err := r.client.ListStream(ctx, &containersapi.ListContainersRequest{
+			Filters: filters,
+		})
+		if err != nil {
+			yield(containers.Container{}, errgrpc.ToNative(err))
+			return
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				yield(containers.Container{}, errgrpc.ToNative(ctx.Err()))
+				return
+			default:
+				con, err := session.Recv()
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+					if s, ok := status.FromError(err); ok {
+						if s.Code() == codes.Unimplemented {
+							yield(containers.Container{}, errStreamNotAvailable)
+							return
+						}
+					}
+					yield(containers.Container{}, errgrpc.ToNative(err))
+					return
+				}
+				if !yield(containerFromProto(con.Container), nil) {
+					return
+				}
+			}
 		}
 	}
 }
