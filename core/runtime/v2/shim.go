@@ -289,7 +289,7 @@ func makeConnection(ctx context.Context, id string, params client.BootstrapParam
 	case "ttrpc":
 		conn, err := client.Connect(params.Address, client.AnonReconnectDialer)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create TTRPC connection: %w", err)
+			return nil, fmt.Errorf("failed to create TTRPC connection: %w params is: %#v", err, params)
 		}
 		defer func() {
 			if retErr != nil {
