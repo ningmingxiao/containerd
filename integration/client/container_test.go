@@ -76,6 +76,57 @@ func TestContainerList(t *testing.T) {
 	}
 }
 
+func TestContainerListWithStream(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("test require linux")
+	}
+	_, err := exec.LookPath("time")
+	if err != nil {
+		t.Skip("skipping test that requires time command")
+	}
+	client, err := newClient(t, address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	ctx, cancel := testContext(t)
+	defer cancel()
+
+	image, err := client.GetImage(ctx, testImage)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var envs []string
+	for key := range 4000 {
+		envs = append(envs, fmt.Sprintf("SFTPV6_CFBFC1C7_C8A8_00C_94AC_4EFD3CE927D2_PORT_0001_TCP_PORT%d=value_%d", key, key))
+	}
+
+	for i := 0; i < 300; i++ {
+		id := fmt.Sprintf("container_%d", i)
+		container, err := client.NewContainer(ctx, id, WithNewSnapshot(id, image), WithNewSpec(oci.WithImageConfig(image), oci.WithEnv(envs), withExitStatus(7)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer container.Delete(ctx, WithSnapshotCleanup)
+	}
+
+	cmd := exec.Command("time", "-v", "ctr", "-a", "/run/containerd-test/containerd.sock", "c", "ls", ">", "/dev/null")
+	data, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("ctr c ls output: %s", data)
+
+	cmdStream := exec.Command("time", "-v", "ctr", "-a", "/run/containerd-test/containerd.sock", "c", "ls", "--stream", ">", "/dev/null")
+	dataStream, err := cmdStream.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("ctr c ls  whith stream output: %s", dataStream)
+}
+
 func TestNewContainer(t *testing.T) {
 	t.Parallel()
 
