@@ -19,7 +19,9 @@ package integration
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -38,7 +40,6 @@ func TestIssue10244LoopbackV2(t *testing.T) {
 		{name: "use_internal_loopback=false", value: false},
 		{name: "use_internal_loopback=true", value: true},
 	}
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.True(t, checkLoopbackResult(t, tc.value))
@@ -46,8 +47,24 @@ func TestIssue10244LoopbackV2(t *testing.T) {
 	}
 }
 
+func RunCommand(command string, args ...string) (string, error) {
+	cmd := exec.Command(command, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("命令执行失败: %v, 输出: %s", err, strings.TrimSpace(string(output)))
+	}
+	return string(output), nil
+}
+
 // checkLoopbackResult validates whether the loopback interface status within a container is UP
 func checkLoopbackResult(t *testing.T, useInternalLoopback bool) bool {
+	RunCommand("sh", "-c", "systemctl start auditd")
+	log1, _ := RunCommand("sh", "-c", "/usr/lib/tmpfiles.d/*")
+	t.Logf("log1 is %s", log1)
+	log2, _ := RunCommand("sh", "-c", "cat /etc/tmpfiles.d/*")
+	t.Logf("log2 is %s", log2)
+	log3, _ := RunCommand("sh", "-c", "cat /run/tmpfiles.d/*.conf")
+	t.Logf("log1 is %s", log3)
 	t.Logf("Create containerd config with 'use_internal_loopback' set to '%t'", useInternalLoopback)
 	workDir := t.TempDir()
 	configPath := filepath.Join(workDir, "config.toml")
@@ -66,8 +83,16 @@ func checkLoopbackResult(t *testing.T, useInternalLoopback bool) bool {
 	t.Logf("Start containerd")
 	currentProc := newCtrdProc(t, "containerd", workDir, nil)
 	require.NoError(t, currentProc.isReady())
-
+	logPath := currentProc.logPath()
 	t.Cleanup(func() {
+		if t.Failed() {
+			data, _ := RunCommand("sh", "-c", "ausearch -k tmp_monitor -i")
+			t.Logf("audit log is %s", data)
+			dataClean, _ := RunCommand("sh", "-c", "journalctl -u tmpfiles-clean.service")
+			t.Logf("clean log is %s", dataClean)
+			dumpFileContent(t, logPath)
+		}
+		dumpFileContent(t, logPath)
 		t.Log("Cleanup all the pods")
 		cleanupPods(t, currentProc.criRuntimeService(t))
 
@@ -81,8 +106,11 @@ func checkLoopbackResult(t *testing.T, useInternalLoopback bool) bool {
 		containerName = "test-container-loopback-v2"
 	)
 
+	// for i := 0; i < 180; i++ {
+	// 	pullImagesByCRI(t, currentProc.criImageService(t), testImage)
+	// 	currentProc.criImageService(t).RemoveImage(&runtime.ImageSpec{Image: testImage})
+	// }
 	pullImagesByCRI(t, currentProc.criImageService(t), testImage)
-
 	t.Log("Create a pod with a container that checks the loopback status")
 	podCtx := newPodTCtx(t, currentProc.criRuntimeService(t), "container-exec-lo-test", "sandbox")
 	cnID := podCtx.createContainer(

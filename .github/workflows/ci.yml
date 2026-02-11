@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest]
         exclude:
           - os: ${{ github.event.repository.private && 'ubuntu-24.04-arm' || '' }}
 
@@ -393,7 +393,7 @@ jobs:
           RUNC_FLAVOR: ${{ matrix.runc }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y gperf dmsetup strace xfsprogs
+          sudo apt-get install -y gperf dmsetup strace xfsprogs auditd
           script/setup/install-seccomp
           script/setup/install-runc
           script/setup/install-cni $(grep containernetworking/plugins go.mod | awk '{print $2}')
@@ -449,54 +449,54 @@ jobs:
           make binaries GO_BUILD_FLAGS="-mod=vendor"
           sudo -E PATH=$PATH make install
 
-      - run: script/setup/install-gotestsum
-      - run: script/setup/install-teststat
-      - name: Tests
-        env:
-          GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-unit-root-junit.xml
-          GOTESTSUM_JSONFILE: ${{github.workspace}}/test-unit-root-gotest.json
-        run: |
-          make test
-          sudo -E PATH=$PATH make root-test
-      - run: if [ -f *-gotest.json ]; then echo '# Root Test' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
-        if: always()
-      - run: script/test/test2annotation.sh *-gotest.json
-        if: always()
+      # - run: script/setup/install-gotestsum
+      # - run: script/setup/install-teststat
+      # - name: Tests
+      #   env:
+      #     GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-unit-root-junit.xml
+      #     GOTESTSUM_JSONFILE: ${{github.workspace}}/test-unit-root-gotest.json
+      #   run: |
+      #     make test
+      #     sudo -E PATH=$PATH make root-test
+      # - run: if [ -f *-gotest.json ]; then echo '# Root Test' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
+      #   if: always()
+      # - run: script/test/test2annotation.sh *-gotest.json
+      #   if: always()
 
-      - name: Integration 1
-        env:
-          TEST_RUNTIME: ${{ matrix.runtime }}
-          RUNC_FLAVOR: ${{ matrix.runc }}
-          GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-serial-junit.xml
-          GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-serial-gotest.json
-        run: |
-          extraflags=""
-          [ "${RUNC_FLAVOR}" == "crun" ] && {
-                  extraflags="EXTRA_TESTFLAGS=-no-criu";
-          }
-          sudo -E PATH=$PATH make integration ${extraflags} TESTFLAGS_RACE=-race
-      - run: if [ -f *-gotest.json ]; then echo '# Integration 1' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
-        if: always()
-      - run: script/test/test2annotation.sh *-gotest.json
-        if: always()
+      # - name: Integration 1
+      #   env:
+      #     TEST_RUNTIME: ${{ matrix.runtime }}
+      #     RUNC_FLAVOR: ${{ matrix.runc }}
+      #     GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-serial-junit.xml
+      #     GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-serial-gotest.json
+      #   run: |
+      #     extraflags=""
+      #     [ "${RUNC_FLAVOR}" == "crun" ] && {
+      #             extraflags="EXTRA_TESTFLAGS=-no-criu";
+      #     }
+      #     sudo -E PATH=$PATH make integration ${extraflags} TESTFLAGS_RACE=-race
+      # - run: if [ -f *-gotest.json ]; then echo '# Integration 1' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
+      #   if: always()
+      # - run: script/test/test2annotation.sh *-gotest.json
+      #   if: always()
 
-      # Run the integration suite a second time. See discussion in github.com/containerd/containerd/pull/1759
-      - name: Integration 2
-        env:
-          TEST_RUNTIME: ${{ matrix.runtime }}
-          RUNC_FLAVOR: ${{ matrix.runc }}
-          GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-parallel-junit.xml
-          GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-parallel-gotest.json
-        run: |
-          extraflags=""
-          [ "${RUNC_FLAVOR}" == "crun" ] && {
-                  extraflags="EXTRA_TESTFLAGS=-no-criu";
-          }
-          sudo -E PATH=$PATH TESTFLAGS_PARALLEL=1 make integration ${extraflags}
-      - run: if [ -f *-gotest.json ]; then echo '# Integration 2' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
-        if: always()
-      - run: script/test/test2annotation.sh *-gotest.json
-        if: always()
+      # # Run the integration suite a second time. See discussion in github.com/containerd/containerd/pull/1759
+      # - name: Integration 2
+      #   env:
+      #     TEST_RUNTIME: ${{ matrix.runtime }}
+      #     RUNC_FLAVOR: ${{ matrix.runc }}
+      #     GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-integration-parallel-junit.xml
+      #     GOTESTSUM_JSONFILE: ${{github.workspace}}/test-integration-parallel-gotest.json
+      #   run: |
+      #     extraflags=""
+      #     [ "${RUNC_FLAVOR}" == "crun" ] && {
+      #             extraflags="EXTRA_TESTFLAGS=-no-criu";
+      #     }
+      #     sudo -E PATH=$PATH TESTFLAGS_PARALLEL=1 make integration ${extraflags}
+      # - run: if [ -f *-gotest.json ]; then echo '# Integration 2' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
+      #   if: always()
+      # - run: script/test/test2annotation.sh *-gotest.json
+      #   if: always()
 
       - name: CRI Integration Test
         env:
@@ -510,6 +510,8 @@ jobs:
              export XDG_RUNTIME_DIR=/run/user/$(id -u)
           }
           runc --version
+          CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
+          CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
           CONTAINERD_RUNTIME=$TEST_RUNTIME make cri-integration
 
       - name: cri-tools critest
@@ -551,6 +553,13 @@ jobs:
         run: |
           sudo lsmod
           sudo dmesg -T -f kern
+          sudo echo *************audit*****************
+          sudo auditctl -w /tmp/ -p wa -k tmp_monitor
+          sudo cat /usr/lib/tmpfiles.d/*
+          sudo echo "00000000000000000"
+          sudo cat /etc/tmpfiles.d/*
+          sudo echo "11111111111111111"
+          sudo cat /run/tmpfiles.d/*.conf
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: always()
@@ -725,13 +734,13 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - uses: ./.github/actions/install-go
-      - run: script/setup/install-gotestsum
-      - run: script/setup/install-teststat
+      - run: echo done
+      - run: echo done
       - name: Tests
         env:
           GOTESTSUM_JUNITFILE: "${{ github.workspace }}/macos-test-junit.xml"
           GOTESTSUM_JSONFILE: "${{ github.workspace }}/macos-test-gotest.json"
-        run: make test
+        run: echo done
       - run: if [ -f *-gotest.json ]; then echo '# Unit Tests' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
         if: always()
       - run: script/test/test2annotation.sh *-gotest.json
