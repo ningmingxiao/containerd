@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	nlog "log"
 	"net/url"
 	"os"
 	"os/exec"
@@ -131,6 +132,15 @@ func createIO(ctx context.Context, id string, ioUID, ioGID int, stdio stdio.Stdi
 	return pio, nil
 }
 
+func LogFile(path string, v ...interface{}) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	nlog.SetOutput(file)
+	nlog.Printf("%v \n", v)
+}
+
 func copyPipes(ctx context.Context, rio runc.IO, stdin, stdout, stderr string, wg, cwg *sync.WaitGroup) error {
 	var sameFile *countingWriteCloser
 	for _, i := range []struct {
@@ -146,11 +156,16 @@ func copyPipes(ctx context.Context, rio runc.IO, stdin, stdout, stderr string, w
 					cwg.Done()
 					p := bufPool.Get().(*[]byte)
 					defer bufPool.Put(p)
-					if _, err := io.CopyBuffer(wc, rio.Stdout(), *p); err != nil {
-						log.G(ctx).Warn("error copying stdout")
+					LogFile("/var/log/copy.log", "io.CopyBuffer0011")
+					lenSize, err := io.CopyBuffer(wc, rio.Stdout(), *p)
+					if err != nil {
+						log.G(ctx).Warnf("error copying stdout %v", err)
 					}
+					LogFile("/var/log/copy.log", "io.CopyBuffer001")
+					LogFile("/var/log/copy.log", "err is %v", err)
+					LogFile("/var/log/copy.log", fmt.Sprintf("io.CopyBuffer len is %d", lenSize))
+					log.G(ctx).Warnf("io.CopyBuffer len is %d", lenSize)
 					wg.Done()
-					wc.Close()
 					if rc != nil {
 						rc.Close()
 					}
@@ -165,9 +180,14 @@ func copyPipes(ctx context.Context, rio runc.IO, stdin, stdout, stderr string, w
 					cwg.Done()
 					p := bufPool.Get().(*[]byte)
 					defer bufPool.Put(p)
-					if _, err := io.CopyBuffer(wc, rio.Stderr(), *p); err != nil {
+					LogFile("/var/log/copy.log", "io.CopyBuffer0022")
+					lenSize, err := io.CopyBuffer(wc, rio.Stderr(), *p)
+					if err != nil {
 						log.G(ctx).Warn("error copying stderr")
 					}
+					LogFile("/var/log/copy.log", "io.CopyBuffer002")
+					LogFile("/var/log/copy.log", "err is %v", err)
+					LogFile("/var/log/copy.log", fmt.Sprintf("io.CopyBuffer len is %d", lenSize))
 					wg.Done()
 					wc.Close()
 					if rc != nil {
@@ -186,10 +206,10 @@ func copyPipes(ctx context.Context, rio runc.IO, stdin, stdout, stderr string, w
 			fr io.Closer
 		)
 		if ok {
-			if fw, err = fifo.OpenFifo(ctx, i.name, syscall.O_WRONLY, 0); err != nil {
+			if fw, err = fifo.OpenFifo(context.Background(), i.name, syscall.O_WRONLY, 0); err != nil {
 				return fmt.Errorf("containerd-shim: opening w/o fifo %q failed: %w", i.name, err)
 			}
-			if fr, err = fifo.OpenFifo(ctx, i.name, syscall.O_RDONLY, 0); err != nil {
+			if fr, err = fifo.OpenFifo(context.Background(), i.name, syscall.O_RDONLY, 0); err != nil {
 				return fmt.Errorf("containerd-shim: opening r/o fifo %q failed: %w", i.name, err)
 			}
 		} else {
@@ -219,8 +239,11 @@ func copyPipes(ctx context.Context, rio runc.IO, stdin, stdout, stderr string, w
 		cwg.Done()
 		p := bufPool.Get().(*[]byte)
 		defer bufPool.Put(p)
-
-		io.CopyBuffer(rio.Stdin(), f, *p)
+		LogFile("/var/log/copy.log", "io.CopyBuffer0033")
+		lenSize, err := io.CopyBuffer(rio.Stdin(), f, *p)
+		LogFile("/var/log/copy.log", "io.CopyBuffer003")
+		LogFile("/var/log/copy.log", "err is %v", err)
+		LogFile("/var/log/copy.log", fmt.Sprintf("io.CopyBuffer len is %d", lenSize))
 		rio.Stdin().Close()
 		f.Close()
 	}()
