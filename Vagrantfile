@@ -84,9 +84,7 @@ Vagrant.configure("2") do |config|
             lsof \
             make \
             strace \
-            kernel-modules-extra-$(uname -r) \
             ${INSTALL_PACKAGES}
-        modprobe xt_comment
     SHELL
   end
 
