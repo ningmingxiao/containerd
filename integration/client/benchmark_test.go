@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	. "github.com/containerd/containerd/v2/client"
-	"github.com/containerd/containerd/v2/core/containers"
 	"github.com/containerd/containerd/v2/pkg/oci"
 )
 
@@ -40,11 +39,6 @@ func BenchmarkContainerCreate(b *testing.B) {
 		b.Error(err)
 		return
 	}
-	spec, err := oci.GenerateSpec(ctx, client, &containers.Container{ID: b.Name()}, oci.WithImageConfig(image), withTrue())
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	var containers []Container
 	defer func() {
 		for _, c := range containers {
@@ -58,7 +52,7 @@ func BenchmarkContainerCreate(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		id := fmt.Sprintf("%s-%d", b.Name(), i)
-		container, err := client.NewContainer(ctx, id, WithNewSnapshot(id, image), WithSpec(spec))
+		container, err := client.NewContainer(ctx, id, WithNewSnapshot(id, image), WithNewSpec(oci.WithImageConfig(image), withExitStatus(7)))
 		if err != nil {
 			b.Error(err)
 			return
@@ -83,11 +77,6 @@ func BenchmarkContainerStart(b *testing.B) {
 		b.Error(err)
 		return
 	}
-	spec, err := oci.GenerateSpec(ctx, client, &containers.Container{ID: b.Name()}, oci.WithImageConfig(image), withTrue())
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	var containers []Container
 	defer func() {
 		for _, c := range containers {
@@ -99,7 +88,7 @@ func BenchmarkContainerStart(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		id := fmt.Sprintf("%s-%d", b.Name(), i)
-		container, err := client.NewContainer(ctx, id, WithNewSnapshot(id, image), WithSpec(spec))
+		container, err := client.NewContainer(ctx, id, WithNewSnapshot(id, image), WithNewSpec(oci.WithImageConfig(image), withExitStatus(7)))
 		if err != nil {
 			b.Error(err)
 			return
@@ -115,10 +104,24 @@ func BenchmarkContainerStart(b *testing.B) {
 			b.Error(err)
 			return
 		}
+		statusC, err := task.Wait(ctx)
+		if err != nil {
+			b.Error(err)
+			return
+		}
 		defer task.Delete(ctx)
 		if err := task.Start(ctx); err != nil {
 			b.Error(err)
 			return
+		}
+		status := <-statusC
+		code, _, err := status.Result()
+		if err != nil {
+			b.Error(err)
+			return
+		}
+		if code != 7 {
+			b.Errorf("expected status 7 from wait but received %d", code)
 		}
 	}
 	b.StopTimer()

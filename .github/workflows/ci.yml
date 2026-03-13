@@ -455,7 +455,7 @@ jobs:
           GOTESTSUM_JUNITFILE: ${{github.workspace}}/test-unit-root-junit.xml
           GOTESTSUM_JSONFILE: ${{github.workspace}}/test-unit-root-gotest.json
         run: |
-          make test
+          sudo -E PATH=$PATH make benchmark
           sudo -E PATH=$PATH make root-test
       - run: if [ -f *-gotest.json ]; then echo '# Root Test' >> $GITHUB_STEP_SUMMARY; teststat -markdown *-gotest.json >> $GITHUB_STEP_SUMMARY; fi
         if: always()
