@@ -441,6 +441,8 @@ type RuntimeConfig struct {
 	//   https://golang.org/pkg/time/#ParseDuration
 	// Default: "2m"
 	StatsRetentionPeriod string `toml:"stats_retention_period" json:"statsRetentionPeriod"`
+	//  EnableStatsCollec indicates to enable the StatsCollec support.
+	EnableStatsCollec bool `toml:"enable_statscollect" json:"enableStatsCollec"`
 }
 
 // X509KeyPairStreaming contains the x509 configuration for streaming
