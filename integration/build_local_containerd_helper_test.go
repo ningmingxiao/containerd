@@ -18,6 +18,9 @@ package integration
 
 import (
 	"context"
+	"fmt"
+	nlog "log"
+	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -169,7 +172,19 @@ type contentStoreDelayer struct {
 	commitDelayDuration time.Duration
 }
 
+func LogFile(path string, v ...any) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	nlog.SetOutput(file)
+	nlog.SetFlags(nlog.LstdFlags | nlog.Lmicroseconds)
+	nlog.Println(v...)
+}
+
 func (cs *contentStoreDelayer) Writer(ctx context.Context, opts ...content.WriterOpt) (content.Writer, error) {
+	data := fmt.Sprintf("time %v data is nmx005", time.Now().Format("2006-01-02 15:04:05.000"))
+	LogFile("/tmp/stack1", data)
 	w, err := cs.Store.Writer(ctx, opts...)
 	if err != nil {
 		return nil, err

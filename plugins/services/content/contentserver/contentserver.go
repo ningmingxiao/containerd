@@ -316,8 +316,16 @@ func (s *service) Write(session api.Content_WriteServer) (err error) {
 	if err != nil {
 		return errgrpc.ToGRPC(err)
 	}
-	defer wr.Close()
-
+	// defer wr.Close()
+	defer func() {
+		if err != nil {
+			log.L.Infof("nmx001a err is %s", err.Error())
+		}
+		log.L.Infof("nmx001a wr.Close()")
+		// time.Sleep(time.Millisecond * 100)
+		wr.Close()
+		log.L.Infof("nmx001b wr.Close()")
+	}()
 	for {
 		msg.Action = req.Action
 		ws, err := wr.Status()
