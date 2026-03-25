@@ -126,7 +126,6 @@ func (w *writer) Commit(ctx context.Context, size int64, expected digest.Digest,
 	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 		return err
 	}
-
 	if _, err := os.Stat(target); err == nil {
 		// collision with the target file!
 		if err := os.RemoveAll(w.path); err != nil {
@@ -135,6 +134,7 @@ func (w *writer) Commit(ctx context.Context, size int64, expected digest.Digest,
 		return fmt.Errorf("content %v: %w", dgst, errdefs.ErrAlreadyExists)
 	}
 
+	log.G(ctx).Infof("nmx001 rename %s", ingest)
 	if err := os.Rename(ingest, target); err != nil {
 		return err
 	}
@@ -142,6 +142,7 @@ func (w *writer) Commit(ctx context.Context, size int64, expected digest.Digest,
 	if err := syncDir(filepath.Dir(target)); err != nil {
 		return err
 	}
+	log.G(ctx).Infof("nmx001 sync done %s", ingest)
 	// Enable content blob integrity verification if supported
 
 	if w.s.integritySupported {
@@ -198,8 +199,12 @@ func (w *writer) Commit(ctx context.Context, size int64, expected digest.Digest,
 func (w *writer) Close() (err error) {
 	if w.fp != nil {
 		w.fp.Sync()
-		err = w.fp.Close()
+		// err = w.fp.Close()
+		data, _ := w.updatedAt.MarshalText()
+
+		log.G(context.Background()).Infof("nmx002 Close()  data  is %s", string(data))
 		writeTimestampFile(filepath.Join(w.path, "updatedat"), w.updatedAt)
+		err = w.fp.Close()
 		w.fp = nil
 		w.s.unlock(w.ref)
 		return

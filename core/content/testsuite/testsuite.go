@@ -58,8 +58,10 @@ func ContentSuite(t *testing.T, name string, storeFn StoreInitFn) {
 	t.Run("ResumeCopyReaderAt", makeTest(t, name, storeFn, checkResume(resumeCopyReaderAt)))
 	t.Run("SmallBlob", makeTest(t, name, storeFn, checkSmallBlob))
 	t.Run("Labels", makeTest(t, name, storeFn, checkLabels))
+	for i := 0; i < 200; i++ {
+		t.Run("CommitErrorState", makeTest(t, name, storeFn, checkCommitErrorState))
+	}
 
-	t.Run("CommitErrorState", makeTest(t, name, storeFn, checkCommitErrorState))
 }
 
 // ContentCrossNSSharedSuite runs a test suite under shared content policy
@@ -385,6 +387,8 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 		t.Fatal(err)
 	}
 	if _, err := w.Write(c1); err != nil {
+		time.Sleep(time.Millisecond * 50)
+		t.Logf("nmx001 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 		discardWriter(t, w)
 		t.Fatal(err)
 	}
@@ -420,6 +424,8 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 		discardWriter(t, w)
 		t.Fatalf("Unexpected error: %+v", err)
 	}
+	time.Sleep(time.Millisecond * 50)
+	t.Logf("nmx002 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 	w.Close()
 
 	w, err = content.OpenWriter(ctx, cs, content.WithRef(ref))
@@ -442,6 +448,8 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 		discardWriter(t, w)
 		t.Fatalf("Unexpected error: %+v", err)
 	}
+	time.Sleep(time.Millisecond * 50)
+	t.Logf("nmx003 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 	w.Close()
 
 	w, err = content.OpenWriter(ctx, cs, content.WithRef(ref))
@@ -459,6 +467,8 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 		discardWriter(t, w)
 		t.Fatalf("Unexpected error: %+v", err)
 	}
+	time.Sleep(time.Millisecond * 50)
+	t.Logf("nmx004 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 	w.Close()
 
 	w, err = content.OpenWriter(ctx, cs, content.WithRef(ref))
@@ -470,9 +480,13 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 
 	// Now expect commit to succeed
 	if err := w.Commit(ctx, int64(len(c1))+4, ""); err != nil {
+		time.Sleep(time.Millisecond * 50)
+		t.Logf("nmx005 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 		discardWriter(t, w)
 		t.Fatalf("Failed to commit: %+v", err)
 	}
+	time.Sleep(time.Millisecond * 50)
+	t.Logf("nmx006 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 	w.Close()
 
 	// Create another writer with same reference
@@ -482,6 +496,8 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 	}
 
 	if _, err := w.Write(c1); err != nil {
+		time.Sleep(time.Millisecond * 50)
+		t.Logf("nmx007 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 		discardWriter(t, w)
 		t.Fatal(err)
 	}
@@ -493,10 +509,15 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 	if err == nil {
 		t.Fatalf("Expected already exists error")
 	} else if !errdefs.IsAlreadyExists(err) {
+		t.Logf("nmx008a1 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
+		time.Sleep(time.Millisecond * 100)
 		discardWriter(t, w)
 		t.Fatalf("Unexpected error: %+v", err)
 	}
-	w.Close()
+	t.Logf("nmx008a2 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
+	time.Sleep(time.Millisecond * 100)
+	t.Logf("nmx008a3 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
+	// w.Close()
 
 	w, err = content.OpenWriter(ctx, cs, content.WithRef(ref))
 	if err != nil {
@@ -508,6 +529,8 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 	if err := w.Truncate(0); err != nil {
 		t.Fatalf("failed to truncate writer: %+v", err)
 	}
+	time.Sleep(time.Millisecond * 50)
+	t.Logf("nmx009 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 	if err := w.Close(); err != nil {
 		t.Fatalf("Close failed: %+v", err)
 	}
@@ -520,6 +543,8 @@ func checkCommitErrorState(ctx context.Context, t *testing.T, cs content.Store) 
 	if err := w.Truncate(0); err != nil {
 		t.Fatalf("failed to truncate writer: %+v", err)
 	}
+	time.Sleep(time.Millisecond * 50)
+	t.Logf("nmx0010 time is %v", time.Now().Format("2006-01-02 15:04:05.000"))
 	if err := w.Close(); err != nil {
 		t.Fatalf("Close failed: %+v", err)
 	}
