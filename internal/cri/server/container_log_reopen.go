@@ -20,7 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"time"
 
+	"github.com/containerd/containerd/api/services/tasks/v1"
+
+	criconfig "github.com/containerd/containerd/v2/internal/cri/config"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -35,18 +40,47 @@ func (c *criService) ReopenContainerLog(ctx context.Context, r *runtime.ReopenCo
 	if container.Status.Get().State() != runtime.ContainerState_CONTAINER_RUNNING {
 		return nil, errors.New("container is not running")
 	}
-
-	// Create new container logger and replace the existing ones.
-	stdoutWC, stderrWC, err := c.createContainerLoggers(container.LogPath, container.Config.GetTty())
-	if err != nil {
-		return nil, err
-	}
-	oldStdoutWC, oldStderrWC := container.IO.AddOutput("log", stdoutWC, stderrWC)
-	if oldStdoutWC != nil {
-		oldStdoutWC.Close()
-	}
-	if oldStderrWC != nil {
-		oldStderrWC.Close()
+	if container.IOType == criconfig.IOTypeFile {
+		_, err = c.client.TaskService().ReOpenLog(ctx, &tasks.ReOpenLogRequest{
+			ContainerID: container.ID,
+		})
+		fmt.Println("reopen 001")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Create new container logger and replace the existing ones.
+		stdoutWC, stderrWC, err := c.createContainerLoggers(container.LogPath, container.Config.GetTty())
+		if err != nil {
+			return nil, err
+		}
+		oldStdoutWC, oldStderrWC := container.IO.AddOutput("log", stdoutWC, stderrWC)
+		if oldStdoutWC != nil {
+			oldStdoutWC.Close()
+		}
+		if oldStderrWC != nil {
+			oldStderrWC.Close()
+		}
 	}
 	return &runtime.ReopenContainerLogResponse{}, nil
+}
+func WaitForFileCreate(filePath string, timeout, interval time.Duration) error {
+	deadline := time.After(timeout)
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-deadline:
+			return errors.New("timeout waiting for file: " + filePath)
+		case <-ticker.C:
+			if _, err := os.Stat(filePath); err == nil {
+				return nil
+			} else if os.IsNotExist(err) {
+				continue
+			} else {
+				return err
+			}
+		}
+	}
 }
