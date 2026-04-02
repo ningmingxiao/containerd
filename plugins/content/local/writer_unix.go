@@ -23,7 +23,7 @@ import (
 	"os"
 )
 
-func syncDir(dir string) error {
+func SyncDir(dir string) error {
 	dirF, err := os.Open(dir)
 	if err != nil {
 		return fmt.Errorf("failed to open dir %s: %w", dir, err)
