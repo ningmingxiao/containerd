@@ -306,7 +306,7 @@ func makeConnection(ctx context.Context, id string, params *bootapi.BootstrapRes
 	case "ttrpc":
 		conn, err := client.Connect(params.Address, dialer)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create TTRPC connection: %w", err)
+			return nil, fmt.Errorf("failed to create TTRPC connection: %w params is: %#v", err, params)
 		}
 		defer func() {
 			if retErr != nil {
