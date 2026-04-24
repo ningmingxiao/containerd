@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/containerd/continuity"
+	"github.com/moby/locker"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -179,6 +179,7 @@ func StoreStatus(root, id string, status Status) (StatusStorage, error) {
 	return &statusStorage{
 		path:   path,
 		status: status,
+		locker: locker.New(),
 	}, nil
 }
 
@@ -198,15 +199,16 @@ func LoadStatus(root, id string) (Status, error) {
 }
 
 type statusStorage struct {
-	sync.RWMutex
 	path   string
 	status Status
+	locker *locker.Locker
 }
 
 // Get a copy of container status.
 func (s *statusStorage) Get() Status {
-	s.RLock()
-	defer s.RUnlock()
+	// // TODO(ningmingxiao): use rwlock
+	s.locker.Lock(s.path)
+	defer s.locker.Unlock(s.path)
 	// Deep copy is needed in case some fields in Status are updated after Get()
 	// is called.
 	return deepCopyOf(s.status)
@@ -272,8 +274,8 @@ func deepCopyOf(s Status) Status {
 
 // UpdateSync updates the container status and the on disk checkpoint.
 func (s *statusStorage) UpdateSync(u UpdateFunc) error {
-	s.Lock()
-	defer s.Unlock()
+	s.locker.Lock(s.path)
+	defer s.locker.Unlock(s.path)
 	newStatus, err := u(s.status)
 	if err != nil {
 		return err
@@ -291,8 +293,8 @@ func (s *statusStorage) UpdateSync(u UpdateFunc) error {
 
 // Update the container status.
 func (s *statusStorage) Update(u UpdateFunc) error {
-	s.Lock()
-	defer s.Unlock()
+	s.locker.Lock(s.path)
+	defer s.locker.Unlock(s.path)
 	newStatus, err := u(s.status)
 	if err != nil {
 		return err
