@@ -103,3 +103,124 @@ func (km *keyMutex) Unlock(key string) {
 		delete(km.locks, key)
 	}
 }
+
+type KeyedRWLocker interface {
+	Lock(ctx context.Context, key string) error
+	Unlock(key string)
+	RLock(ctx context.Context, key string) error
+	RUnlock(key string)
+}
+
+type krwlock struct {
+	wSem *semaphore.Weighted
+	rSem *semaphore.Weighted
+
+	ref int
+}
+
+type keyRWMutex struct {
+	mu    sync.Mutex
+	locks map[string]*krwlock
+}
+
+const maxReaders = 1 << 20
+
+func NewRW() KeyedRWLocker {
+	return &keyRWMutex{
+		locks: make(map[string]*krwlock),
+	}
+}
+
+func (km *keyRWMutex) Lock(ctx context.Context, key string) error {
+	km.mu.Lock()
+	l, ok := km.locks[key]
+	if !ok {
+		km.locks[key] = &krwlock{
+			wSem: semaphore.NewWeighted(1),
+			rSem: semaphore.NewWeighted(maxReaders),
+		}
+		l = km.locks[key]
+	}
+	l.ref++
+	km.mu.Unlock()
+	if err := l.wSem.Acquire(ctx, 1); err != nil {
+		km.cleanup(key, l)
+		return err
+	}
+	if err := l.rSem.Acquire(ctx, maxReaders); err != nil {
+		l.wSem.Release(1)
+		km.cleanup(key, l)
+		return err
+	}
+
+	return nil
+}
+
+func (km *keyRWMutex) Unlock(key string) {
+	km.mu.Lock()
+	defer km.mu.Unlock()
+
+	l, ok := km.locks[key]
+	if !ok {
+		panic(fmt.Errorf("kmutex: unlock of unlocked key %s", key))
+	}
+
+	l.rSem.Release(maxReaders)
+	l.wSem.Release(1)
+
+	l.ref--
+	if l.ref == 0 {
+		delete(km.locks, key)
+	}
+	if l.ref < 0 {
+		panic(fmt.Errorf("kmutex: unlock of unlocked key %s", key))
+	}
+}
+
+func (km *keyRWMutex) RLock(ctx context.Context, key string) error {
+	km.mu.Lock()
+	l, ok := km.locks[key]
+	if !ok {
+		l = &krwlock{
+			wSem: semaphore.NewWeighted(1),
+			rSem: semaphore.NewWeighted(maxReaders),
+		}
+		km.locks[key] = l
+	}
+	l.ref++
+	km.mu.Unlock()
+	if err := l.rSem.Acquire(ctx, 1); err != nil {
+		km.cleanup(key, l)
+		return err
+	}
+	return nil
+}
+
+func (km *keyRWMutex) RUnlock(key string) {
+	km.mu.Lock()
+	defer km.mu.Unlock()
+
+	l, ok := km.locks[key]
+	if !ok {
+		panic(fmt.Errorf("kmutex: runlock of unlocked key %s", key))
+	}
+	l.rSem.Release(1)
+
+	l.ref--
+	if l.ref == 0 {
+		delete(km.locks, key)
+	}
+	if l.ref < 0 {
+		panic(fmt.Errorf("kmutex: runlock of unlocked key %s", key))
+	}
+}
+
+func (km *keyRWMutex) cleanup(key string, l *krwlock) {
+	km.mu.Lock()
+	defer km.mu.Unlock()
+
+	l.ref--
+	if l.ref == 0 {
+		delete(km.locks, key)
+	}
+}
