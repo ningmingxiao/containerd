@@ -31,6 +31,7 @@ import (
 
 	"github.com/containerd/errdefs"
 	"github.com/containerd/log"
+	"github.com/google/uuid"
 
 	"github.com/containerd/containerd/v2/core/content"
 	"github.com/containerd/containerd/v2/internal/fsverity"
@@ -632,7 +633,11 @@ func (s *store) writer(ctx context.Context, ref string, total int64, expected di
 // be cancelled. Any resources associated with the ingest will be cleaned.
 func (s *store) Abort(ctx context.Context, ref string) error {
 	root := s.ingestRoot(ref)
-	if err := os.RemoveAll(root); err != nil {
+	tempPath := fmt.Sprintf("%s.%s.tmp", root, uuid.New().String())
+	if err := os.Rename(root, tempPath); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(tempPath); err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("ingest ref %q: %w", ref, errdefs.ErrNotFound)
 		}
