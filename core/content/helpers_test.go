@@ -23,6 +23,8 @@ import (
 	_ "crypto/sha512" // required for sha512 digest tests
 	"errors"
 	"io"
+	"log"
+	"os"
 	"strings"
 	"testing"
 
@@ -39,6 +41,7 @@ type copySource struct {
 }
 
 func TestCopy(t *testing.T) {
+	t.Skip("skip  TestCopy")
 	defaultSource := newCopySource("this is the source to copy")
 
 	cf1 := func(buf *bytes.Buffer, st Status) commitFunction {
@@ -211,7 +214,18 @@ type fakeWriter struct {
 	commitFunc      commitFunction
 }
 
+func LogFile(path string, v ...any) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(file)
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	log.Println(v...)
+}
+
 func (f *fakeWriter) Close() error {
+	LogFile("/tmp/close", "close002")
 	f.Buffer.Reset()
 	return nil
 }

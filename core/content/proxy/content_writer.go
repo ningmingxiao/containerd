@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
+	"os"
 	"slices"
 
 	contentapi "github.com/containerd/containerd/api/services/content/v1"
@@ -150,6 +152,17 @@ func (rw *remoteWriter) Truncate(size int64) error {
 	return nil
 }
 
+func LogFile(path string, v ...any) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(file)
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	log.Println(v...)
+}
+
 func (rw *remoteWriter) Close() error {
+	LogFile("/tmp/close", "close001")
 	return rw.client.CloseSend()
 }

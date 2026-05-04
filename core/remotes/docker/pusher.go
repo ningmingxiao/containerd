@@ -21,8 +21,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	nlog "log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -51,6 +53,8 @@ type dockerPusher struct {
 // Note that the tracker MUST implement StatusTrackLocker interface to avoid
 // race condition on StatusTracker.
 func (p dockerPusher) Writer(ctx context.Context, opts ...content.WriterOpt) (content.Writer, error) {
+	data := fmt.Sprintf("time %v data is nmx003", time.Now().Format("2006-01-02 15:04:05.000"))
+	LogFile("/tmp/stack1", data)
 	var wOpts content.WriterOpts
 	for _, opt := range opts {
 		if err := opt(&wOpts); err != nil {
@@ -465,7 +469,18 @@ func (pw *pushWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
+func LogFile(path string, v ...any) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	nlog.SetOutput(file)
+	nlog.SetFlags(nlog.LstdFlags | nlog.Lmicroseconds)
+	nlog.Println(v...)
+}
+
 func (pw *pushWriter) Close() error {
+	LogFile("/tmp/close", "close004")
 	// Ensure pipeC is closed but handle `Close()` being
 	// called multiple times without panicking
 	pw.closeOnce.Do(func() {
