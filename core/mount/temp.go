@@ -36,6 +36,7 @@ var tempMountLocation = getTempDir()
 // if found.
 func WithTempMount(ctx context.Context, mounts []Mount, f func(root string) error) (err error) {
 	root, uerr := os.MkdirTemp(tempMountLocation, "containerd-mount")
+	log.G(ctx).Infof("nmx001 create dir %s", root)
 	if uerr != nil {
 		return fmt.Errorf("failed to create temp dir: %w", uerr)
 	}
@@ -47,6 +48,7 @@ func WithTempMount(ctx context.Context, mounts []Mount, f func(root string) erro
 	// from the mounted dir.
 	// For details, please refer to #1868 #1785.
 	defer func() {
+		log.G(ctx).Infof("nmx001 delete dir %s", root)
 		if uerr = os.Remove(root); uerr != nil {
 			log.G(ctx).WithError(uerr).WithField("dir", root).Error("failed to remove mount temp dir")
 		}

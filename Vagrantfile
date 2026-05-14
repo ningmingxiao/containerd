@@ -83,6 +83,7 @@ Vagrant.configure("2") do |config|
             libselinux-devel \
             lsof \
             make \
+            audit \
             strace \
             kernel-modules-extra-$(uname -r) \
             ${INSTALL_PACKAGES}

@@ -17,6 +17,6 @@
 package local
 
 // sync dir doesn't support in windows
-func syncDir(dir string) error {
+func SyncDir(dir string) error {
 	return nil
 }

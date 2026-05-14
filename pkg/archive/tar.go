@@ -33,6 +33,8 @@ import (
 
 	"github.com/containerd/containerd/v2/pkg/archive/tarheader"
 	"github.com/containerd/containerd/v2/pkg/epoch"
+
+	// "github.com/containerd/containerd/v2/plugins/content/local"
 	"github.com/containerd/continuity/fs"
 	"github.com/containerd/log"
 )
@@ -195,6 +197,7 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 					}
 					if _, exists := unpackedPaths[path]; !exists {
 						err := os.RemoveAll(path)
+						log.G(ctx).Infof("nmx0011 deleted %v", path)
 						return err
 					}
 					return nil
@@ -205,7 +208,7 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 			if strings.HasPrefix(base, whiteoutPrefix) {
 				originalBase := base[len(whiteoutPrefix):]
 				originalPath := filepath.Join(dir, originalBase)
-
+				log.G(ctx).Infof("nmx0011a deleted %v", originalPath)
 				return false, os.RemoveAll(originalPath)
 			}
 
@@ -293,6 +296,7 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 		// just apply the metadata from the layer).
 		if fi, err := os.Lstat(path); err == nil {
 			if !fi.IsDir() || hdr.Typeflag != tar.TypeDir {
+				log.G(ctx).Infof("nmx0011c deleted %v", path)
 				if err := os.RemoveAll(path); err != nil {
 					return 0, err
 				}
@@ -332,13 +336,19 @@ func createTarFile(ctx context.Context, path, extractDir string, hdr *tar.Header
 	// but for os.Foo() calls we need the mode converted to os.FileMode,
 	// so use hdrInfo.Mode() (they differ for e.g. setuid bits)
 	hdrInfo := hdr.FileInfo()
-
+	if strings.Contains(path, "dev") {
+		log.G(ctx).Infof("nmx001 try to create dev dir %s", path)
+	}
 	switch hdr.Typeflag {
 	case tar.TypeDir:
 		// Create directory unless it exists as a directory already.
 		// In that case we just want to merge the two
 		if fi, err := os.Lstat(path); err != nil || !fi.IsDir() {
+			if strings.Contains(path, "dev") {
+				log.G(ctx).Infof("nmx001 create dev dir %s", path)
+			}
 			if err := mkdir(path, hdrInfo.Mode()); err != nil {
+				log.G(ctx).Infof("nmx001 create dev dir failed %s err is %s", path, err.Error())
 				return err
 			}
 		}
