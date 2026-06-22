@@ -22,8 +22,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	nlog "log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -467,12 +469,24 @@ func (s *store) total(ingestPath string) int64 {
 	return total
 }
 
+func LogFile(path string, v ...any) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	nlog.SetOutput(file)
+	nlog.SetFlags(nlog.LstdFlags | nlog.Lmicroseconds)
+	nlog.Println(v...)
+}
+
 // Writer begins or resumes the active writer identified by ref. If the writer
 // is already in use, an error is returned. Only one writer may be in use per
 // ref at a time.
 //
 // The argument `ref` is used to uniquely identify a long-lived writer transaction.
 func (s *store) Writer(ctx context.Context, opts ...content.WriterOpt) (content.Writer, error) {
+	data := fmt.Sprintf("time %v data is nmx004", time.Now().Format("2006-01-02 15:04:05.000"))
+	LogFile("/tmp/stack1", data)
 	var wOpts content.WriterOpts
 	for _, opt := range opts {
 		if err := opt(&wOpts); err != nil {
@@ -589,11 +603,13 @@ func (s *store) writer(ctx context.Context, ref string, total int64, expected di
 		if err := os.WriteFile(refp, []byte(ref), 0666); err != nil {
 			return nil, err
 		}
-
+		data, _ := startedAt.MarshalText()
+		log.G(ctx).Infof("nmx001 writer data  is %s", string(data))
 		if err := writeTimestampFile(filepath.Join(path, "startedat"), startedAt); err != nil {
 			return nil, err
 		}
-
+		// data, _ := startedAt.MarshalText()
+		// log.G(ctx).Infof("nmx001 writer data  is %s", string(data))
 		if err := writeTimestampFile(filepath.Join(path, "updatedat"), startedAt); err != nil {
 			return nil, err
 		}
@@ -628,19 +644,56 @@ func (s *store) writer(ctx context.Context, ref string, total int64, expected di
 	}, nil
 }
 
+func ListFilesSimple(dirPath string) ([]string, error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var files []string
+	for _, entry := range entries {
+		files = append(files, entry.Name())
+	}
+	return files, nil
+}
+
 // Abort an active transaction keyed by ref. If the ingest is active, it will
 // be cancelled. Any resources associated with the ingest will be cleaned.
 func (s *store) Abort(ctx context.Context, ref string) error {
 	root := s.ingestRoot(ref)
 	if err := os.RemoveAll(root); err != nil {
+		log.G(ctx).Infof("Abort err %s", stack())
+		dirs, err1 := ListFilesSimple(root)
+		if err1 == nil {
+			data, err2 := os.ReadFile(filepath.Join(root, "updatedat"))
+			if err2 == nil {
+				log.G(ctx).Infof("nmx data is %s", string(data))
+			}
+
+			data1, err2 := os.ReadFile("/tmp/stack")
+			if err2 == nil {
+				log.G(ctx).Infof("nmx2 stack is %s", string(data1))
+			}
+			data11, err2 := os.ReadFile("/tmp/stack_new")
+			if err2 == nil {
+				log.G(ctx).Infof("nmx2 stack is %s", string(data11))
+			}
+			data2, _ := os.ReadFile("/tmp/001.log")
+			log.G(ctx).Infof("stack is %s", string(data2))
+			log.G(ctx).Infof("nmx list dir is %v", dirs)
+		}
+		log.G(ctx).Infof("nmx Abort err %s", err.Error())
 		if os.IsNotExist(err) {
 			return fmt.Errorf("ingest ref %q: %w", ref, errdefs.ErrNotFound)
 		}
-
 		return err
 	}
-
 	return nil
+}
+
+func stack() string {
+	var buf [2 << 10]byte
+	return string(buf[:runtime.Stack(buf[:], true)])
 }
 
 func (s *store) blobPath(dgst digest.Digest) (string, error) {
@@ -701,6 +754,7 @@ func readFileTimestamp(p string) (time.Time, error) {
 }
 
 func writeTimestampFile(p string, t time.Time) error {
+	log.G(context.Background()).Infof("nmx write writeTimestampFile %s", p)
 	b, err := t.MarshalText()
 	if err != nil {
 		return err
@@ -715,13 +769,20 @@ func writeToCompletion(path string, data []byte, mode os.FileMode) error {
 		return fmt.Errorf("create tmp file: %w", err)
 	}
 	_, err = f.Write(data)
-	f.Close()
 	if err != nil {
 		return fmt.Errorf("write tmp file: %w", err)
+	}
+	defer f.Close()
+	err = f.Sync()
+	if err != nil {
+		return fmt.Errorf("sync file %s", f.Name())
 	}
 	err = os.Rename(tmp, path)
 	if err != nil {
 		return fmt.Errorf("rename tmp file: %w", err)
+	}
+	if err := syncDir(filepath.Dir(tmp)); err != nil {
+		return err
 	}
 	return nil
 }

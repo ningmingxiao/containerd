@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"io"
 
+	"runtime"
+	"time"
+
 	contentapi "github.com/containerd/containerd/api/services/content/v1"
 	"github.com/containerd/errdefs"
 	"github.com/containerd/errdefs/pkg/errgrpc"
@@ -193,6 +196,9 @@ func (pcs *proxyContentStore) Writer(ctx context.Context, opts ...content.Writer
 			return nil, err
 		}
 	}
+	now := time.Now()
+	data := fmt.Sprintf("time %v data is nmx001", now.Format("2006-01-02 15:04:05.000"))
+	LogFile("/tmp/stack1", data)
 	wrclient, offset, err := pcs.negotiate(ctx, wOpts.Ref, wOpts.Desc.Size, wOpts.Desc.Digest)
 	if err != nil {
 		return nil, errgrpc.ToNative(err)
@@ -216,8 +222,17 @@ func (pcs *proxyContentStore) Abort(ctx context.Context, ref string) error {
 	return nil
 }
 
+func stack() string {
+	var buf [2 << 10]byte
+	return string(buf[:runtime.Stack(buf[:], true)])
+}
+
 func (pcs *proxyContentStore) negotiate(ctx context.Context, ref string, size int64, expected digest.Digest) (contentapi.TTRPCContent_WriteClient, int64, error) {
 	wrclient, err := pcs.client.Write(ctx)
+	data := fmt.Sprintf("time is %s data is %s ", time.Now().Format("2006-01-02 15:04:05.000"), stack())
+	go func() {
+		LogFile("/tmp/stack", data)
+	}()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -293,6 +308,10 @@ type convertWriteClient struct {
 
 func (c convertClient) Write(ctx context.Context) (contentapi.TTRPCContent_WriteClient, error) {
 	wc, err := c.ContentClient.Write(ctx)
+	data := fmt.Sprintf("time is %s data is %s ", time.Now().Format("2006-01-02 15:04:05.000"), stack())
+	go func() {
+		LogFile("/tmp/stack_new", data)
+	}()
 	if wc == nil {
 		return nil, err
 	}

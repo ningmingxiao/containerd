@@ -20,6 +20,8 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	nlog "log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -371,6 +373,8 @@ func (cs *contentStore) Abort(ctx context.Context, ref string) error {
 }
 
 func (cs *contentStore) Writer(ctx context.Context, opts ...content.WriterOpt) (content.Writer, error) {
+	data := fmt.Sprintf("time %v data is nmx002", time.Now().Format("2006-01-02 15:04:05.000"))
+	LogFile("/tmp/stack1", data)
 	var wOpts content.WriterOpts
 	for _, opt := range opts {
 		if err := opt(&wOpts); err != nil {
@@ -514,7 +518,18 @@ type namespacedWriter struct {
 	desc    ocispec.Descriptor
 }
 
+func LogFile(path string, v ...any) {
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	nlog.SetOutput(file)
+	nlog.SetFlags(nlog.LstdFlags | nlog.Lmicroseconds)
+	nlog.Println(v...)
+}
+
 func (nw *namespacedWriter) Close() error {
+	LogFile("/tmp/close", "close003")
 	if nw.w != nil {
 		return nw.w.Close()
 	}
