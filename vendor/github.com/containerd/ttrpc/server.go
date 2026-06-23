@@ -486,7 +486,7 @@ func (c *serverConn) run(sctx context.Context) {
 					}
 					continue
 				}
-
+				time.Sleep(5 * time.Millisecond)
 				streams.Store(id, sh)
 				atomic.AddInt32(&active, 1)
 			}
@@ -548,6 +548,7 @@ func (c *serverConn) run(sctx context.Context) {
 				// the server is localClosed but not remoteClosed. Once the server
 				// is closing, the whole stream may be considered finished
 				streams.Delete(response.id)
+				log.G(ctx).Infof("map len is %d", LenSyncMap(&streams))
 				atomic.AddInt32(&active, -1)
 			}
 		case err := <-recvErr:
@@ -566,6 +567,15 @@ func (c *serverConn) run(sctx context.Context) {
 			return
 		}
 	}
+}
+
+func LenSyncMap(m *sync.Map) int {
+	count := 0
+	m.Range(func(key, value any) bool {
+		count++
+		return true
+	})
+	return count
 }
 
 var noopFunc = func() {}
