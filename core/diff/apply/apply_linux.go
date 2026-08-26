@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/moby/sys/userns"
@@ -31,7 +32,7 @@ import (
 	"github.com/containerd/errdefs"
 )
 
-func apply(ctx context.Context, mounts []mount.Mount, r io.Reader, sync bool) (retErr error) {
+func apply(ctx context.Context, mounts []mount.Mount, r io.Reader, sync bool, digest string) (retErr error) {
 	switch {
 	case len(mounts) == 1 && mounts[0].Type == "overlay":
 		// OverlayConvertWhiteout (mknod c 0 0) doesn't work in userns.
@@ -52,6 +53,8 @@ func apply(ctx context.Context, mounts []mount.Mount, r io.Reader, sync bool) (r
 		if len(parents) > 0 {
 			opts = append(opts, archive.WithParents(parents))
 		}
+		opts = append(opts, archive.WithSnpshotPath(filepath.Dir(path)))
+		opts = append(opts, archive.WithDigest(digest))
 		_, err = archive.Apply(ctx, path, r, opts...)
 		if err == nil && sync {
 			err = doSyncFs(path)
@@ -66,8 +69,13 @@ func apply(ctx context.Context, mounts []mount.Mount, r io.Reader, sync bool) (r
 			retErr = doSyncFs(mounts[0].Source)
 		}()
 	}
+
+	opts := []archive.ApplyOpt{
+		archive.WithSnpshotPath(filepath.Dir(mounts[0].Source)),
+		archive.WithDigest(digest),
+	}
 	return mount.WithTempMount(ctx, mounts, func(root string) error {
-		_, err := archive.Apply(ctx, root, r)
+		_, err := archive.Apply(ctx, root, r, opts...)
 		return err
 	})
 }

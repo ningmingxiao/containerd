@@ -18,6 +18,7 @@ package archive
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
@@ -30,6 +31,9 @@ import (
 	"time"
 
 	"github.com/moby/sys/userns"
+	"github.com/sirupsen/logrus"
+	"github.com/vbatts/tar-split/tar/asm"
+	"github.com/vbatts/tar-split/tar/storage"
 
 	"github.com/containerd/containerd/v2/pkg/archive/tarheader"
 	"github.com/containerd/containerd/v2/pkg/epoch"
@@ -164,7 +168,7 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 	var (
 		dirs []*tar.Header
 
-		tr = tar.NewReader(r)
+		// tr = tar.NewReader(r)
 
 		// Used for handling opaque directory markers which
 		// may occur out of order
@@ -172,6 +176,33 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 
 		convertWhiteout = options.ConvertWhiteout
 	)
+	fmt.Printf("nmx001 path is %s", root)
+	snapPath := ctx.Value("root")
+	if ctx.Value("root") != nil {
+		if snPath, ok := snapPath.(string); ok {
+			fmt.Println(snPath)
+		}
+	}
+	// name := fmt.Sprintf("/tmp/%s-tar-data.json.gz", desc.Digest)
+	tarSplitPath := filepath.Join(options.snapshotPath, fmt.Sprintf("%s_tar-data.json.gz", options.digest))
+
+	mf, err := os.OpenFile(tarSplitPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(0600))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer mf.Close()
+
+	mfz := gzip.NewWriter(mf)
+	defer mfz.Close()
+	metaPacker := storage.NewJSONPacker(mfz)
+
+	rdr, done, err := asm.NewInputTarStreamWithDone(r, metaPacker, nil)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer rdr.Close()
+
+	tr := tar.NewReader(rdr)
 
 	if convertWhiteout == nil {
 		// handle whiteouts by removing the target files
@@ -312,6 +343,9 @@ func applyNaive(ctx context.Context, root string, r io.Reader, options ApplyOpti
 			dirs = append(dirs, hdr)
 		}
 		unpackedPaths[path] = struct{}{}
+	}
+	if doneErr := <-done; doneErr != nil {
+		return 0, doneErr
 	}
 
 	for _, hdr := range dirs {

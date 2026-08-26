@@ -68,7 +68,7 @@ func (s *fsApplier) Apply(ctx context.Context, desc ocispec.Descriptor, mounts [
 				"digest": desc.Digest,
 				"size":   desc.Size,
 				"media":  desc.MediaType,
-			}).Debugf("diff applied")
+			}).Infof("diff applied")
 		}
 	}()
 
@@ -127,7 +127,7 @@ func (s *fsApplier) Apply(ctx context.Context, desc ocispec.Descriptor, mounts [
 		}
 	}
 
-	if err := apply(ctx, mounts, rc, config.SyncFs); err != nil {
+	if err := apply(ctx, mounts, rc, config.SyncFs, desc.Digest.String()); err != nil {
 		return emptyDesc, err
 	}
 

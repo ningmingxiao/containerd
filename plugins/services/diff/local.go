@@ -105,7 +105,6 @@ func (l *local) Apply(ctx context.Context, er *diffapi.ApplyRequest, _ ...grpc.C
 		desc    = oci.DescriptorFromProto(er.Diff)
 		mounts  = mount.FromProto(er.Mounts)
 	)
-
 	var opts []diff.ApplyOpt
 	if er.Payloads != nil {
 		payloads := make(map[string]typeurl.Any)
