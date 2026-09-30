@@ -19,11 +19,14 @@
 package mount
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"sort"
 	"time"
 
+	"github.com/containerd/log"
 	"github.com/moby/sys/mountinfo"
 	"golang.org/x/sys/unix"
 )
@@ -62,7 +65,9 @@ func UnmountRecursive(target string, flags int) error {
 	sort.SliceStable(targets, func(i, j int) bool {
 		return len(targets[i]) > len(targets[j])
 	})
-
+	if len(targets) >= 2 {
+		return fmt.Errorf("nmx001 target is %v", target)
+	}
 	for i, target := range targets {
 		if err := UnmountAll(target, flags); err != nil {
 			if i == len(targets)-1 { // last mount
@@ -73,6 +78,14 @@ func UnmountRecursive(target string, flags int) error {
 	return nil
 }
 
+func printProcessTree(target string) {
+	out, err := exec.Command("ps", "-eo", "pid,ppid,stat,cmd").CombinedOutput()
+	if err != nil {
+		return
+	}
+	log.G(context.TODO()).Warnf("nmx001 unmount: target %q is busy, process tree:\n%s\n", target, out)
+}
+
 func unmount(target string, flags int) error {
 	if isFUSE(target) {
 		// TODO: Why error is ignored?
@@ -81,11 +94,12 @@ func unmount(target string, flags int) error {
 			return nil
 		}
 	}
-	for range 50 {
+	for range 2 {
 		if err := unix.Unmount(target, flags); err != nil {
 			switch err {
 			case unix.EBUSY:
-				time.Sleep(50 * time.Millisecond)
+				printProcessTree(target)
+				time.Sleep(10 * time.Millisecond)
 				continue
 			default:
 				return err
